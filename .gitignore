@@ -1,0 +1,17 @@
+*
+!.gitignore
+!Makefile
+!Makefile.common
+!Makefile.dep
+!*.h
+!*.cc
+!*.c
+!bin/
+!filesys/
+!filesys/test/*
+!machine/
+!network/
+!test/
+!threads/
+!userprog/
+!vm/
