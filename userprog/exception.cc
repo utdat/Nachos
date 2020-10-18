@@ -151,38 +151,38 @@ ExceptionHandler(ExceptionType which)
     		break;
     	case PageFaultException: // No valid translation found
     		DEBUG('a', "\nUnexpected exception PageFaultException: No valid translation found");
-    		printf("\nUnexpected exception PageFaultException: No valid translation found")
-            interrupt->halt();
+    		printf("\nUnexpected exception PageFaultException: No valid translation found");
+            interrupt->Halt();
     		break;
     	case ReadOnlyException: // Write attempted to page marked "read-only"
     		DEBUG('a', "\nUnexpected exception ReadOnlyException: Write attempted to page marked \"read-only\"");
     		printf("\nUnexpected exception ReadOnlyException: Write attempted to page marked \"read-only\"");
-    		interrupt->halt();
+    		interrupt->Halt();
     		break;
     	case BusErrorException: // Translation resulted in an invalid physical address
     		DEBUG('a', "\nUnexpected exception BusErrorException: Translation resulted in an invalid physical address");
     		printf("\nUnexpected BusErrorException: exception Translation resulted in an invalid physical address");
-    		interrupt->halt();
+    		interrupt->Halt();
     		break;
     	case AddressErrorException: // Unaligned reference or one that was beyond the end of the address space
     		DEBUG('a', "\nUnexpected exception AddressErrorException: Unaligned reference or one that was beyond the end of the address space");
     		printf("\nUnexpected exception AddressErrorException: Unaligned reference or one that was beyond the end of the address space");
-    		interrupt->halt();
+    		interrupt->Halt();
     		break;
     	case OverflowException: // Integer overflow in add or sub.
     		DEBUG('a', "\nUnexpected exception OverflowException: Integer overflow in add or sub.");
     		printf("\nUnexpected exception OverflowException: Integer overflow in add or sub.");
-    		interrupt->halt();
+    		interrupt->Halt();
     		break;
 		case IllegalInstrException:// Unimplemented or reserved instr.
 		    DEBUG('a', "\nUnexpected exception IllegalInstrException: Unimplemented or reserved instr.");
     		printf("\nUnexpected exception IllegalInstrException: Unimplemented or reserved instr.");
-    		interrupt->halt();
+    		interrupt->Halt();
     		break;
 		case NumExceptionTypes:
 			DEBUG('a', "\nUnexpected exception NumExceptionTypes:");
     		printf("\nUnexpected exception NumExceptionTypes:");
-    		interrupt->halt();
+    		interrupt->Halt();
     		break;
     	case SyscallException:
     		// Get the type of syscall
@@ -232,7 +232,7 @@ ExceptionHandler(ExceptionType which)
     		currPcValue = machine->ReadRegister(PCReg);
     		nextPcValue = machine->ReadRegister(NextPCReg);
     		machine->WriteRegister(PrevPCReg, currPcValue);
-    		machine->WriteRegister(PCReg, nextPcValue)
+    		machine->WriteRegister(PCReg, nextPcValue);
     		machine->WriteRegister(NextPCReg, nextPcValue + 4);
     		break;
     	default:
