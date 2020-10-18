@@ -49,6 +49,22 @@
 //----------------------------------------------------------------------
 
 
+// Copy memory from user memory to system memory
+// param virtAddr: Address in user memory
+char* 
+User2System(int virtAddr,int limit)
+{
+
+}
+
+
+// Copy memory from system memory to user memory
+int
+System2User(int virtAddr, int len, char* buffer)
+{
+
+}
+
 // TODO: Describe this function
 void
 HandleSyscallHalt()
@@ -190,7 +206,7 @@ ExceptionHandler(ExceptionType which)
     		syscallType = machine->ReadRegister(2);
     		switch (syscallType)
     		{
-    			case SC_Halt: // TODO: Describe syscall here
+    			case SC_Halt: // Halt the system
     				HandleSyscallHalt();
     				break;
 				case SC_Exit: // TODO: Describe syscall here
@@ -209,7 +225,7 @@ ExceptionHandler(ExceptionType which)
 					HandleSyscallOpen();
 					break;
 				case SC_Read: // TODO: Describe syscall here
-					HandleSyscallCreate();
+					HandleSyscallRead();
 					break;
 				case SC_Write: // TODO: Describe syscall here
 					HandleSyscallWrite();
