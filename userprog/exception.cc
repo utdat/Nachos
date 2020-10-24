@@ -51,21 +51,57 @@
 
 // Copy memory from user memory to system memory
 // param virtAddr: Address in user memory
+// param limit: Max length of memory space
+// return: Data as array of byte
 char* 
 User2System(int virtAddr,int limit)
 {
+	if (limit <= 0) return nullptr;
 
+	// Buffer to hold memory
+	char* buffer = new char[limit + 1];
+	if (buffer == nullptr) return nullptr;
+	memset(buffer, '\0', limit + 1);
+
+	// Read memory from user memory and parse it to buffer
+	int c;
+	for (int i = 0; i < limit; i++)
+	{
+		machine->ReadMem(virtAddr + i, 1, &c);
+		buffer[i] = (char)c;
+		if (c == 0) break;
+	}
+
+	return buffer;
 }
 
 
 // Copy memory from system memory to user memory
+// param virtAddr: Address in user memory to parse data to
+// param len: Size of data
+// param buffer: data to coppy
+// Return: Number of bytes copied
 int
 System2User(int virtAddr, int len, char* buffer)
 {
+	if (len < 0) return -1;
+	if (len == 0) return 0;
 
+	// Copy data from buffer to user memory
+	int i = 0;
+	while (i < len)
+	{
+		int c = (int) buffer[i];
+		machine->WriteMem(virtAddr + 1, 1, c);
+
+		if (c == 0) break;
+		i++;
+	}
 }
 
-// TODO: Describe this function
+
+// Handle syscall Halt
+// Print system information and halt the os
 void
 HandleSyscallHalt()
 {
@@ -74,83 +110,133 @@ HandleSyscallHalt()
 }
 
 
+// Handle syscall Exit
 // TODO: Describe this function
 void
 HandleSyscallExit()
 {
-
+	DEBUG('a', "\nUnexpected exception Syscall Exit: Not impelemted");
+	printf("\nUnexpected exception Syscall Exit: Not impelemted");
+	interrupt->Halt();
 }
 
 
+// Handle syscall Exec
 // TODO: Describe this function
 void
 HandleSyscallExec()
 {
-
+	DEBUG('a', "\nUnexpected exception Syscall Exec: Not impelemted");
+	printf("\nUnexpected exception Syscall Exec: Not impelemted");
+	interrupt->Halt();
 }
 
 
+// Handle syscall Join
 // TODO: Describe this function
 void
 HandleSyscallJoin()
 {
-
+	DEBUG('a', "\nUnexpected exception Syscall Join: Not impelemted");
+	printf("\nUnexpected exception Syscall Join: Not impelemted");
+	interrupt->Halt();
 }
 
 
+// Handle syscall Close
 // TODO: Describe this function
 void
 HandleSyscallCreate()
 {
-
+	DEBUG('a', "\nUnexpected exception Syscall Create: Not impelemted");
+	printf("\nUnexpected exception Syscall Create: Not impelemted");
+	interrupt->Halt();
 }
 
 
+// Handle syscall Open
 // TODO: Describe this function
 void
 HandleSyscallOpen()
 {
-
+	DEBUG('a', "\nUnexpected exception Syscall Open: Not impelemted");
+	printf("\nUnexpected exception Syscall Open: Not impelemted");
+	interrupt->Halt();
 }
 
 
+// Handle syscall Read
 // TODO: Describe this function
 void
 HandleSyscallRead()
 {
-
+	DEBUG('a', "\nUnexpected exception Syscall Read: Not impelemted");
+	printf("\nUnexpected exception Syscall Write: Not impelemted");
+	interrupt->Halt();
 }
 
 
+// Handle syscall Write
 // TODO: Describe this function
 void
 HandleSyscallWrite()
 {
-
+	DEBUG('a', "\nUnexpected exception Syscall Write: Not impelemted");
+	printf("\nUnexpected exception Syscall Write: Not impelemted");
+	interrupt->Halt();
 }
 
 
+// Handle syscall Close
 // TODO: Describe this function
 void
 HandleSyscallClose()
 {
-
+	DEBUG('a', "\nUnexpected exception Syscall Close: Not impelemted");
+	printf("\nUnexpected exception Syscall Close: Not impelemted");
+	interrupt->Halt();
 }
 
 
+// Handle syscall Fork
 // TODO: Describe this function
 void
 HandleSyscallFork()
 {
-
+	DEBUG('a', "\nUnexpected exception Syscall Fork: Not impelemted");
+	printf("\nUnexpected exception Syscall Fork: Not impelemted");
+	interrupt->Halt();
 }
 
 
+// Handle syscall Yield
 // TODO: Describe this function
 void
 HandleSyscallYield()
 {
+	DEBUG('a', "\nUnexpected exception Syscall Yield: Not impelemted");
+	printf("\nUnexpected exception Syscall Yield: Not impelemted");
+	interrupt->Halt();
+}
 
+
+// Handle syscall PrintS
+// Print a string to console
+void
+HandleSyscallPrintS()
+{
+	// Fetch params	
+	int len = machine->ReadRegister(5);
+	if (len <= 0) return;
+
+	int strAddr = machine->ReadRegister(4);
+	char* str = User2System(strAddr, len);
+	if (str == nullptr) return;
+
+	// Write to console. Null character included
+	gSynchConsole->Write(str, len + 1);
+
+	delete[] str;
 }
 
 
@@ -161,6 +247,9 @@ HandleSyscallYield()
 void
 ExceptionHandler(ExceptionType which)
 {
+	// Get syscall type. Used in case of SyscallException
+	int syscallType = machine->ReadRegister(2);
+
     switch (which)
     {
     	case NoException: // Do nothing due to no exception raised
@@ -201,12 +290,9 @@ ExceptionHandler(ExceptionType which)
     		interrupt->Halt();
     		break;
     	case SyscallException:
-    		// Get the type of syscall
-    		int syscallType;
-    		syscallType = machine->ReadRegister(2);
     		switch (syscallType)
     		{
-    			case SC_Halt: // Halt the system
+    			case SC_Halt: // Print system information and halt the os
     				HandleSyscallHalt();
     				break;
 				case SC_Exit: // TODO: Describe syscall here
@@ -238,6 +324,10 @@ ExceptionHandler(ExceptionType which)
 					break;
 				case SC_Yield: // TODO: Describe syscall here
 					HandleSyscallYield();
+					break;
+
+				case SC_PrintS: // Print a string to console
+					HandleSyscallPrintS();
 					break;
 				default:
 					break;

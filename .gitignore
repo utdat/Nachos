@@ -6,6 +6,7 @@
 !*.h
 !*.cc
 !*.c
+!*.s
 !bin/
 !filesys/
 !filesys/test/*
