@@ -140,6 +140,14 @@ class FileSystem {
 		return 0;
 	}
     bool Remove(char *name) { return Unlink(name) == 0; }
+	
+	OpenFile* FileAt(OpenFileId id){ // Return file opened with specified id
+	if (id < 0 || id >= MAX_OPEN_FILE)
+	{
+		return NULL;
+	}
+	return _open_files[id];
+	}
 
 };
 
@@ -167,7 +175,8 @@ class FileSystem {
     void List();			// List all the files in the file system
 
     void Print();			// List all the files and their contents
-
+	
+	OpenFile* FileAt(OpenFileId id);	// Return file object opened with specified id
   private:
    OpenFile* freeMapFile;		// Bit map of free disk blocks,
 					// represented as a file
