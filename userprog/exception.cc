@@ -216,6 +216,7 @@ HandleSyscallOpen()
 		DEBUG('a', "\nUnexpected error when trying to open file: Invalid file name");
 		printf("\nUnexpected error when trying to open file: Invalid file name");
 		machine->WriteRegister(2, -1);
+		delete[] fileName;
 		return;
 	}
 	
