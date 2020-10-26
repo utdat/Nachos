@@ -34,6 +34,24 @@ OpenFile::OpenFile(int sector)
     seekPosition = 0;
 }
 
+
+//----------------------------------------------------------------------
+// OpenFile::OpenFile
+// 	Open a Nachos file for reading and writing.  Bring the file header
+//	into memory while the file is open.
+//
+//	"sector" -- the location on disk of the file header for this file
+//  "t" -- the type of the file open (read, write,..)
+//----------------------------------------------------------------------
+OpenFile::OpenFile(int sector, int t)
+{
+	hdr = new FileHeader;
+	hdr->FetchFrom(sector);
+	seekPosition = 0;
+	_type = t;
+}
+
+
 //----------------------------------------------------------------------
 // OpenFile::~OpenFile
 // 	Close a Nachos file, de-allocating any in-memory data structures.
@@ -194,4 +212,14 @@ int
 OpenFile::Length() 
 { 
     return hdr->FileLength(); 
+}
+
+
+//----------------------------------------------------------------------
+// OpenFile::Type
+// 	Return the type of file opened (read, write, ...)
+//----------------------------------------------------------------------
+int OpenFile::Type()
+{
+	return _type;
 }
