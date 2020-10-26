@@ -140,7 +140,21 @@ FileSystem::FileSystem(bool format)
         freeMapFile = new OpenFile(FreeMapSector);
         directoryFile = new OpenFile(DirectorySector);
     }
+
+	// Initialize open files table
+	_open_files = new OpenFile*[MAX_OPEN_FILE];
+	for (int i = 2; i < MAX_OPEN_FILE; ++i)
+	{
+		_open_files[i] = NULL;
+	}
+
+	// Init first two file (stdin and stdout)
+	Create("stdin", 0);
+	Create("stdout", 0);
+	_open_files[0] = Open("stdin", 2);
+	_open_files[1] = Open("stdout", 3);
 }
+
 
 //----------------------------------------------------------------------
 // FileSystem::Create
@@ -228,17 +242,60 @@ OpenFile *
 FileSystem::Open(char *name)
 { 
     Directory *directory = new Directory(NumDirEntries);
-    OpenFile *openFile = NULL;
     int sector;
+
+	// Find free index first. If no free slot, return null
+	int freeIndex = FindFreeIndex();
+	if (freeIndex < 0)
+	{
+		return NULL;
+	}
 
     DEBUG('f', "Opening file %s\n", name);
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name); 
-    if (sector >= 0) 		
-	openFile = new OpenFile(sector);	// name was found in directory 
+    if (sector >= 0)		
+	_open_files[freeIndex] = new OpenFile(sector);	// name was found in directory 
     delete directory;
-    return openFile;				// return NULL if not found
+
+    return _open_files[freeIndex];				// return NULL if not found
 }
+
+
+//----------------------------------------------------------------------
+// FileSystem::Open
+// 	Open a file for reading and writing.  
+//	To open a file:
+//	  Find the location of the file's header, using the directory 
+//	  Bring the header into memory
+//
+//	"name" -- the text name of the file to be opened
+//  "type" -- the type of open file (read, write,...)
+//----------------------------------------------------------------------
+
+OpenFile *
+FileSystem::Open(char *name, int type)
+{ 
+    Directory *directory = new Directory(NumDirEntries);
+    int sector;
+
+	// Find free index first. If no free slot, return null
+	int freeIndex = FindFreeIndex();
+	if (freeIndex < 0)
+	{
+		return NULL;
+	}
+
+    DEBUG('f', "Opening file %s\n", name);
+    directory->FetchFrom(directoryFile);
+    sector = directory->Find(name); 
+    if (sector >= 0)		
+	_open_files[freeIndex] = new OpenFile(sector, type);	// name was found in directory 
+    delete directory;
+
+    return _open_files[freeIndex];				// return NULL if not found
+}
+
 
 //----------------------------------------------------------------------
 // FileSystem::Remove
@@ -339,3 +396,24 @@ FileSystem::Print()
     delete freeMap;
     delete directory;
 } 
+
+
+//----------------------------------------------------------------------
+// FileSystem::FindFreeIndex
+// 	Find free slot in open files table
+//	Return index to that slot. return -1 if not empty slot remaining
+//----------------------------------------------------------------------
+
+int
+FileSystem::FindFreeIndex()
+{
+	for (int i = 0; i < MAX_OPEN_FILE; ++i)
+	{
+		if (_open_files[i] == NULL)
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}

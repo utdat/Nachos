@@ -38,12 +38,48 @@
 #include "copyright.h"
 #include "openfile.h"
 
+
+typedef int OpenFileID;	// ID of file opened
+
+#define MAX_OPEN_FILE 10 // Maximum number of files allowed to open (max size of file table)
+
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
 				// implementation is available
 class FileSystem {
+  private:
+	OpenFile** _open_files; // Open file table. Hold info of files opened
   public:
-    FileSystem(bool format) {}
+    FileSystem(bool format) {
+		// Init open files
+		_open_files = new OpenFile*[MAX_OPEN_FILE];
+		for (int i = 2; i < MAX_OPEN_FILE; ++i)
+		{
+			_open_files[i] = NULL;
+		}
+
+		// Init first two file (stdin and stdout)
+		Create("stdin", 0);
+		Create("stdout", 0);
+		_open_files[0] = Open("stdin", 2);
+		_open_files[1] = Open("stdout", 3);
+	}
+
+
+	// Destructor for file system
+	~FileSystem()
+	{
+		for (int i = 0; i < MAX_OPEN_FILE; ++i)
+		{
+			if (_open_files[i] != NULL)
+			{
+				delete _open_files[i];
+			}
+		}
+
+		delete _open_files;
+	}
+
 
     bool Create(char *name, int initialSize) { 
 	int fileDescriptor = OpenForWrite(name);
@@ -53,12 +89,20 @@ class FileSystem {
 	return TRUE; 
 	}
 
+	// Open file with type sepcified
     OpenFile* Open(char *name) {
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
 
 	  if (fileDescriptor == -1) return NULL;
 	  return new OpenFile(fileDescriptor);
       }
+	
+	OpenFile* Open(char* name, int type){
+	  int fileDescriptor = OpenForReadWrite(name, FALSE);
+
+	  if (fileDescriptor == -1) return NULL;
+	  return new OpenFile(fileDescriptor, type); 
+	  }	
 
     bool Remove(char *name) { return Unlink(name) == 0; }
 
@@ -78,6 +122,8 @@ class FileSystem {
 					// Create a file (UNIX creat)
 
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
+	
+	OpenFile* Open(char *name, int type);	// Open a file (with type specified (read, write,...))
 
     bool Remove(char *name);  		// Delete a file (UNIX unlink)
 
@@ -90,6 +136,9 @@ class FileSystem {
 					// represented as a file
    OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
+	OpenFile** _open_files; // Open file table. Hold info of files opened
+
+	int FindFreeIndex();
 };
 
 #endif // FILESYS
