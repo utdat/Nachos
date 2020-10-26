@@ -244,13 +244,18 @@ HandleSyscallWrite()
 
 
 // Handle syscall Close
-// TODO: Describe this function
+// Close a file with given OpenFileId
 void
 HandleSyscallClose()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Close: Not impelemted");
-	printf("\nUnexpected exception Syscall Close: Not impelemted");
-	interrupt->Halt();
+	int fileId = machine->ReadRegister(4);
+	if (fileSystem->Close(fileId) < 0)
+	{
+		DEBUG('a', "\nUnexpected error when close a file: Invalid File ID");
+		printf("\nUnexpected error when close a file: Invalid File ID");
+	}
+	
+	// File was closed successfully
 }
 
 
