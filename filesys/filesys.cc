@@ -143,7 +143,7 @@ FileSystem::FileSystem(bool format)
 
 	// Initialize open files table
 	_open_files = new OpenFile*[MAX_OPEN_FILE];
-	for (int i = 2; i < MAX_OPEN_FILE; ++i)
+	for (int i = 0; i < MAX_OPEN_FILE; ++i)
 	{
 		_open_files[i] = NULL;
 	}
@@ -153,6 +153,24 @@ FileSystem::FileSystem(bool format)
 	Create("stdout", 0);
 	_open_files[0] = Open("stdin", 2);
 	_open_files[1] = Open("stdout", 3);
+}
+
+
+//----------------------------------------------------------------------
+// FileSystem::~FileSystem
+// 	Destruct the file system.
+//  Destruct open file tables 
+//----------------------------------------------------------------------
+FileSystem::~FileSystem()
+{
+	for (int i = 0; i < MAX_OPEN_FILE; ++i)
+	{
+		if (_open_files[i] != NULL)
+		{
+			delete _open_files[i];
+		}
+	}
+	delete _open_files;
 }
 
 
@@ -312,7 +330,7 @@ FileSystem::Open(char *name, int type)
 //----------------------------------------------------------------------
 
 OpenFile *
-FileSystem::Open(char *name, int type, OpenFileID& id)
+FileSystem::Open(char *name, int type, OpenFileId& id)
 { 
     Directory *directory = new Directory(NumDirEntries);
     int sector;
@@ -333,7 +351,7 @@ FileSystem::Open(char *name, int type, OpenFileID& id)
     if (sector >= 0)		
 	_open_files[id] = new OpenFile(sector, type);	// name was found in directory 
     delete directory;
-
+	
     return _open_files[id];				// return NULL if not found
 }
 
@@ -441,13 +459,10 @@ FileSystem::Print()
 
 //----------------------------------------------------------------------
 // FileSystem::FindFreeIndex
-// 	Find free slot in open files table
-//	Return index to that slot. return -1 if not empty slot remaining
+// Get the available slot on open files table
 //----------------------------------------------------------------------
-
-int
-FileSystem::FindFreeIndex()
-{
+int FileSystem::FindFreeIndex()
+{ 
 	for (int i = 0; i < MAX_OPEN_FILE; ++i)
 	{
 		if (_open_files[i] == NULL)
@@ -455,6 +470,6 @@ FileSystem::FindFreeIndex()
 			return i;
 		}
 	}
-
 	return -1;
 }
+

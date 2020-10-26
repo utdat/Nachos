@@ -39,7 +39,7 @@
 #include "openfile.h"
 
 
-typedef int OpenFileID;	// ID of file opened
+typedef int OpenFileId;	// ID of file opened
 
 #define MAX_OPEN_FILE 10 // Maximum number of files allowed to open (max size of file table)
 
@@ -49,11 +49,21 @@ typedef int OpenFileID;	// ID of file opened
 class FileSystem {
   private:
 	OpenFile** _open_files; // Open file table. Hold info of files opened
+  	int FindFreeIndex(){ // Find available slot in open files table
+		for (int i = 0; i < MAX_OPEN_FILE; ++i)
+		{
+			if (_open_files[i] == NULL)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
   public:
     FileSystem(bool format) {
 		// Init open files
 		_open_files = new OpenFile*[MAX_OPEN_FILE];
-		for (int i = 2; i < MAX_OPEN_FILE; ++i)
+		for (int i = 0; i < MAX_OPEN_FILE; ++i)
 		{
 			_open_files[i] = NULL;
 		}
@@ -94,21 +104,33 @@ class FileSystem {
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
 
 	  if (fileDescriptor == -1) return NULL;
-	  return new OpenFile(fileDescriptor);
+	  int freeIndex = FindFreeIndex();
+	  if (freeIndex < 0) return NULL;
+	  _open_files[freeIndex] = new OpenFile(fileDescriptor);
+	  return _open_files[freeIndex];
       }
 	
 	OpenFile* Open(char* name, int type){
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
 
 	  if (fileDescriptor == -1) return NULL;
-	  return new OpenFile(fileDescriptor, type); 
+	  int freeIndex = FindFreeIndex();
+	  if (freeIndex < 0) return NULL;
+	  _open_files[freeIndex] = new OpenFile(fileDescriptor, type);
+	  return _open_files[freeIndex];
 	  }	
 	
-	OpenFile* Open(char* name, int type, int& id){
+	OpenFile* Open(char* name, int type, OpenFileId& id){
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
 
 	  if (fileDescriptor == -1) return NULL;
-	  return new OpenFile(fileDescriptor, type); 
+	  if (id < 0 || id >= MAX_OPEN_FILE || _open_files[id] != NULL)
+	  {
+	 	  id = FindFreeIndex();
+	  }
+	  if (id < 0) return NULL;
+	  _open_files[id] = new OpenFile(fileDescriptor, type);
+	  return _open_files[id]; 
 	  }	
 
     bool Remove(char *name) { return Unlink(name) == 0; }
@@ -124,13 +146,13 @@ class FileSystem {
     					// If "format", there is nothing on
 					// the disk, so initialize the directory
     					// and the bitmap of free blocks.
-
+	~FileSystem(); // Destructor of file system
     bool Create(char *name, int initialSize);  	
 					// Create a file (UNIX creat)
 
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
 	OpenFile* Open(char *name, int type);	// Open a file (with type specified (read, write,...))	
-	OpenFile* Open(char *name, int type, OpenFileID& id);	// Open a file (with type specified (read, write,...))
+	OpenFile* Open(char *name, int type, OpenFileId& id);	// Open a file (with type specified (read, write,...))
 													// id is where file will be placed on open files table. If this is not valid, another place will be used 
 
     bool Remove(char *name);  		// Delete a file (UNIX unlink)
@@ -146,7 +168,7 @@ class FileSystem {
 					// file names, represented as a file
 	OpenFile** _open_files; // Open file table. Hold info of files opened
 
-	int FindFreeIndex();
+	int FindFreeIndex(); // Find available slot in open files table
 };
 
 #endif // FILESYS
