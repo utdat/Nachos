@@ -139,6 +139,15 @@ PrintS:
 	j $31
 	.end PrintS
 
+
+	.globl ReadS
+	.ent 	ReadS
+ReadS:
+	addiu $2,$0,SC_ReadS
+	syscall
+	j $31
+	.end ReadS
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main
