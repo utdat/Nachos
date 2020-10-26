@@ -195,12 +195,14 @@ HandleSyscallOpen()
 		machine->WriteRegister(2, -1);
 		return;
 	}
-	int id = 0;
-	if (fileSystem->Open(fileName, type, id) != NULL)
+	
+	// Try to open file and get id
+	int fileId = 0; 
+	if (fileSystem->Open(fileName, type, fileId) != NULL)
 	{
-		machine->WriteRegister(2, id);
+		machine->WriteRegister(2, fileId);
 	}
-	else if (id < 0)
+	else if (fileId < 0)
 	{
 		
 		DEBUG('a', "\nUnexpected error: Not enough slot for opening file");
