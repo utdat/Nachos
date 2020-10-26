@@ -267,6 +267,9 @@ HandleSyscallReadS()
 	System2User(buffAddr, len, tempBuffer);
 	machine->WriteRegister(2, 0);
 	machine->WriteRegister(2, len);	
+
+	// Deallocate buffer
+	delete[] tempBuffer;
 }
 
 
