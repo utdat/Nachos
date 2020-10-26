@@ -52,7 +52,7 @@
 // Copy memory from user memory to system memory
 // param virtAddr: Address in user memory
 // param limit: Max length of memory space
-// return: Data as array of byte
+// return: Data as array of byte. Must be freed manually
 char* 
 User2System(int virtAddr,int limit)
 {
@@ -115,9 +115,9 @@ HandleSyscallHalt()
 void
 HandleSyscallExit()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Exit: Not impelemted");
-	printf("\nUnexpected exception Syscall Exit: Not impelemted");
-	interrupt->Halt();
+	// Program exit
+	// Do nothing other than log debug info
+	DEBUG('a', "\nException Syscall Exit:");
 }
 
 

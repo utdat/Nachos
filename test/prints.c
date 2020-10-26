@@ -3,6 +3,6 @@
 
 int main()
 {
-	PrintS("abcd", 4);
+	PrintS("abcd\n", 5);
 	return 0;
 }
