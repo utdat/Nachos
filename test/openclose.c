@@ -5,8 +5,8 @@
 
 #include "syscall.h"
 
-#define PROGRAM_INS "***Open file | Max file length 64***\n"
-#define PROGRAM_INS_LEN 37
+#define PROGRAM_INS "***Open Close Program | Open file | Max file length 64***\n"
+#define PROGRAM_INS_LEN 58
 #define SUCCESS_MSG "File was successfully opened. File ID: "
 #define SUCCESS_MSG_LEN 39
 #define ERROR_MSG "Error\n"
