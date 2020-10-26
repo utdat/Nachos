@@ -49,6 +49,9 @@
 //----------------------------------------------------------------------
 
 
+#define MAX_FILE_LENGTH 64
+
+
 // Copy memory from user memory to system memory
 // param virtAddr: Address in user memory
 // param limit: Max length of memory space
@@ -155,13 +158,64 @@ HandleSyscallCreate()
 
 
 // Handle syscall Open
-// TODO: Describe this function
+// Open file with specified file name and type
+// Return file ID in file system
 void
 HandleSyscallOpen()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Open: Not impelemted");
-	printf("\nUnexpected exception Syscall Open: Not impelemted");
-	interrupt->Halt();
+	// Fetch params
+	int fileNameAddr = machine->ReadRegister(4);
+	int type = machine->ReadRegister(5);
+	
+	// Process stdin and stdout open
+	if (type == 2)
+	{
+		machine->WriteRegister(2, 0);
+		return;
+	}
+	if (type == 3)
+	{
+		machine->WriteRegister(3, 0);
+		return;
+	}
+
+	// Bound check file name
+	char* fileName = User2System(fileNameAddr, MAX_FILE_LENGTH);
+	if (fileName == NULL) // Cant get file name
+	{
+		DEBUG('a', "\nUnexpected Error: System runned out of memory");
+		printf("\nUnexpected Error: System runned out of memory");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+	if (fileName[0] == '\0') // Empty name
+	{
+		DEBUG('a', "\nUnexpected error when trying to open file: Invalid file name");
+		printf("\nUnexpected error when trying to open file: Invalid file name");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+	int id = 0;
+	if (fileSystem->Open(fileName, type, id) != NULL)
+	{
+		machine->WriteRegister(2, id);
+	}
+	else if (id < 0)
+	{
+		
+		DEBUG('a', "\nUnexpected error: Not enough slot for opening file");
+		printf("\nUnexpected error: Not enough slot for opening file");
+		machine->WriteRegister(2, -1);	
+	}
+	else
+	{
+		DEBUG('a', "\nUnexpected error: Could not open file. Maybe file do not exist");
+		printf("\nUnexpected error: Could not open file. Maybe file do not exist");
+		machine->WriteRegister(2, -1);
+	}
+	
+	// Free space used for file name
+	delete[] fileName;
 }
 
 
