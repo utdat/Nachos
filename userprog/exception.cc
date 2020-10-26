@@ -49,6 +49,10 @@
 //----------------------------------------------------------------------
 
 
+// Max length of filename allow on system
+#define MAX_LENGTH 500
+
+
 // Copy memory from user memory to system memory
 // param virtAddr: Address in user memory
 // param limit: Max length of memory space
@@ -143,14 +147,37 @@ HandleSyscallJoin()
 }
 
 
-// Handle syscall Close
-// TODO: Describe this function
+// Handle syscall Create
+// Create file with specified name in Nachos file system
+// Set result 0 if success, -1 otherwise
 void
 HandleSyscallCreate()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Create: Not impelemted");
-	printf("\nUnexpected exception Syscall Create: Not impelemted");
-	interrupt->Halt();
+	// Get file name
+	int filenameAddr = machine->ReadRegister(4);
+	char* filename = User2System(filenameAddr, MAX_LENGTH);
+
+	if (filename == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for file name");
+		printf("\nUnexpected error: System could not allocate memory for file name");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Create empty file using built-in file system
+	// Catch the error from built-in file system (if any)
+	if (!fileSystem->Create(filename, 0))
+	{
+		DEBUG('a', "\nUnexpected error: System could not create file");
+		printf("\nUnexpected error: System could not create file");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// File created successfully
+	machine->WriteRegister(2, 0);
+	delete[] filename;
 }
 
 
