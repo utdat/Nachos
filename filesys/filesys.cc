@@ -318,7 +318,7 @@ FileSystem::Open(char *name, int type, OpenFileID& id)
     int sector;
 
 	// Find free index first. If no free slot, return null
-	if (_open_files[id] != NULL)
+	if (id < 0 || id >= MAX_OPEN_FILE || _open_files[id] != NULL)
 	{
 		id = FindFreeIndex();
 		if (id < 0)
