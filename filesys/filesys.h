@@ -103,6 +103,13 @@ class FileSystem {
 	  if (fileDescriptor == -1) return NULL;
 	  return new OpenFile(fileDescriptor, type); 
 	  }	
+	
+	OpenFile* Open(char* name, int type, int& id){
+	  int fileDescriptor = OpenForReadWrite(name, FALSE);
+
+	  if (fileDescriptor == -1) return NULL;
+	  return new OpenFile(fileDescriptor, type); 
+	  }	
 
     bool Remove(char *name) { return Unlink(name) == 0; }
 
@@ -122,8 +129,9 @@ class FileSystem {
 					// Create a file (UNIX creat)
 
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
-	
-	OpenFile* Open(char *name, int type);	// Open a file (with type specified (read, write,...))
+	OpenFile* Open(char *name, int type);	// Open a file (with type specified (read, write,...))	
+	OpenFile* Open(char *name, int type, OpenFileID& id);	// Open a file (with type specified (read, write,...))
+													// id is where file will be placed on open files table. If this is not valid, another place will be used 
 
     bool Remove(char *name);  		// Delete a file (UNIX unlink)
 
