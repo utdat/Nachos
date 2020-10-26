@@ -7,25 +7,35 @@
 
 #define PROGRAM_INS "***Open file | Max file length 64***\n"
 #define PROGRAM_INS_LEN 37
-#define SUCCESS_MSG "File was successfully opened\n"
-#define SUCCESS_MSG_LEN 29
+#define SUCCESS_MSG "File was successfully opened. File ID: "
+#define SUCCESS_MSG_LEN 39
 #define ERROR_MSG "Error\n"
 #define ERROR_MSG_LEN 6
+#define FILE_CLOSED_MSG "File closed\n"
+#define FILE_CLOSED_MSG_LEN 12
 
 #define NAME_BUFFER_SIZE 65
 
 int main()
 {
+	// Name of file
 	char fileName[NAME_BUFFER_SIZE];
+
+	// ID of opened file
 	OpenFileId id;
+
+	// Convert id to char array to print
 	char txtId[4];
 	txtId[0] = '0';
 	txtId[1] = '0';
 	txtId[2] = '\n';
 	txtId[3] = '\0';
 
+	// Get file name
 	PrintS(PROGRAM_INS, PROGRAM_INS_LEN);
 	ReadS(fileName, NAME_BUFFER_SIZE);
+
+	// Open file and check for error/success
 	id = Open(fileName, 0);
 	if (id >= 0)
 	{
@@ -45,5 +55,8 @@ int main()
 		PrintS(ERROR_MSG, ERROR_MSG_LEN);
 	}
 	
+	// Close file
+	Close(id);
+	PrintS(FILE_CLOSED_MSG, FILE_CLOSED_MSG_LEN);
 	return 0;
 }
