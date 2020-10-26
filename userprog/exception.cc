@@ -92,7 +92,7 @@ System2User(int virtAddr, int len, char* buffer)
 	while (i < len)
 	{
 		int c = (int) buffer[i];
-		machine->WriteMem(virtAddr + 1, 1, c);
+		machine->WriteMem(virtAddr + i, 1, c);
 
 		if (c == 0) break;
 		i++;
