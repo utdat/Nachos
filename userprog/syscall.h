@@ -31,6 +31,7 @@
 #define SC_Yield	10
 
 #define SC_PrintS	11
+#define SC_ReadS	12
 
 #ifndef IN_ASM
 
@@ -130,6 +131,11 @@ void Yield();
 /* Print c string with specified len to console
  */
 void PrintS(char* str, int len);	
+
+
+/* Read string from input (in form of c string), return length of string
+*/
+int ReadS(char* buffer, int bufferSize);
 
 #endif /* IN_ASM */
 

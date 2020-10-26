@@ -240,6 +240,36 @@ HandleSyscallPrintS()
 }
 
 
+// Handle syscall ReadS
+// Read a string from console
+void
+HandleSyscallReadS()
+{
+	// Fetch params
+	int buffAddr = machine->ReadRegister(4);
+	int buffSize = machine->ReadRegister(5);
+
+	// Allocate temporary buffer for reading data
+	char* tempBuffer = new char[buffSize];
+	if (tempBuffer == NULL)
+	{
+		machine->WriteRegister(2, 0);
+		printf("\nUnexpected Error: System runned out of memory");
+		return;
+	}
+	int len = 0;
+	
+	// Read data from console. Make sure this string is null-terminated (cstring)
+	len = gSynchConsole->Read(tempBuffer, buffSize - 1);
+	tempBuffer[len] = '\0';
+	
+	// Result
+	System2User(buffAddr, len, tempBuffer);
+	machine->WriteRegister(2, 0);
+	machine->WriteRegister(2, len);	
+}
+
+
 // Handle exception from machine
 // For SyscallException, each kind of syscall will be handled 
 // separately in another function (for readability and maintainability)
@@ -328,6 +358,9 @@ ExceptionHandler(ExceptionType which)
 
 				case SC_PrintS: // Print a string to console
 					HandleSyscallPrintS();
+					break;
+				case SC_ReadS: // Read a string from console
+					HandleSyscallReadS();
 					break;
 				default:
 					break;
