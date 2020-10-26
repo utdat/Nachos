@@ -357,6 +357,25 @@ FileSystem::Open(char *name, int type, OpenFileId& id)
 
 
 //----------------------------------------------------------------------
+// FileSystem::Close
+// Close a file by
+//   Destruct file from open files table
+//   Set its slot available
+// Return -1 if OpenFileId is invalid, 0 on success
+//----------------------------------------------------------------------
+int FileSystem::Close(OpenFileId id)
+{
+	if (id < 0 || id >= MAX_OPEN_FILE || _open_files[id] == NULL)
+	{
+		return -1;
+	}
+	delete _open_files[id];
+	_open_files[id] = NULL;
+	return 0;
+}
+
+
+//----------------------------------------------------------------------
 // FileSystem::Remove
 // 	Delete a file from the file system.  This requires:
 //	    Remove it from the directory

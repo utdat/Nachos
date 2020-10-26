@@ -132,7 +132,16 @@ class FileSystem {
 	  _open_files[id] = new OpenFile(fileDescriptor, type);
 	  return _open_files[id]; 
 	  }	
-
+	int Close(OpenFileId id)
+	{
+		if (id < 0 || id >= MAX_OPEN_FILE || _open_files[id] == NULL)
+		{
+			return -1;
+		}
+		delete _open_files[id];
+		_open_files[id] = NULL;
+		return 0;
+	}
     bool Remove(char *name) { return Unlink(name) == 0; }
 
 };
@@ -154,6 +163,7 @@ class FileSystem {
 	OpenFile* Open(char *name, int type);	// Open a file (with type specified (read, write,...))	
 	OpenFile* Open(char *name, int type, OpenFileId& id);	// Open a file (with type specified (read, write,...))
 													// id is where file will be placed on open files table. If this is not valid, another place will be used 
+	int Close(OpenFileId id);	// Close a file with OpenFileId given
 
     bool Remove(char *name);  		// Delete a file (UNIX unlink)
 
@@ -167,7 +177,7 @@ class FileSystem {
    OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
 	OpenFile** _open_files; // Open file table. Hold info of files opened
-
+	
 	int FindFreeIndex(); // Find available slot in open files table
 };
 
