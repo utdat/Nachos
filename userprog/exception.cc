@@ -56,11 +56,11 @@
 char* 
 User2System(int virtAddr,int limit)
 {
-	if (limit <= 0) return nullptr;
+	if (limit <= 0) return NULL;
 
 	// Buffer to hold memory
 	char* buffer = new char[limit + 1];
-	if (buffer == nullptr) return nullptr;
+	if (buffer == NULL) return NULL;
 	memset(buffer, '\0', limit + 1);
 
 	// Read memory from user memory and parse it to buffer
@@ -231,7 +231,7 @@ HandleSyscallPrintS()
 
 	int strAddr = machine->ReadRegister(4);
 	char* str = User2System(strAddr, len);
-	if (str == nullptr) return;
+	if (str == NULL) return;
 
 	// Write to console. Null character included
 	gSynchConsole->Write(str, len + 1);
