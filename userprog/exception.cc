@@ -641,6 +641,36 @@ HandleSyscallReadS()
 }
 
 
+// Handle syscall await
+// Await a thread to finish
+void
+HandleSyscallAwait()
+{
+	// Fetch param
+	// Process id. Need to wait for this process to finish
+	int pid = machine->ReadRegister(4);
+
+	// Check for valid id
+	if (pid < 0 || pid >= MAX_PROCESS_NUM || !gPages->Test(pid))
+	{
+		DEBUG('a', "\nIllegal action: Can not await thread with invalid id");
+		printf("\nIllegal action: Can not await thread with invalid id");
+		return;
+	}
+	
+	// Check if process is not child of current thread
+	if (currentThread->getId() != gProcParentIds[pid])
+	{
+		DEBUG('a', "\nIllegal action: Can not await thread which was not forked from current thread");
+		printf("\nIllegal action: Can not await thread which was not forked from current thread");
+		return;
+	}
+
+	// Semaphore. Wait for thread to finish
+	gAddrLock->P();
+}
+
+
 // Handle exception from machine
 // For SyscallException, each kind of syscall will be handled 
 // separately in another function (for readability and maintainability)
@@ -736,6 +766,11 @@ ExceptionHandler(ExceptionType which)
 				case SC_ReadS: // Read a string from console
 					HandleSyscallReadS();
 					break;
+
+				case SC_Await: // Await a thread to finish
+					HandleSyscallAwait();
+					break;
+
 				default:
 					break;
     		}
