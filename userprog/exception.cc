@@ -325,13 +325,83 @@ HandleSyscallRead()
 
 // Handle syscall Write
 // Write certain specified bytes to file with id given
-// Return number of bytes actually written.
+// Return number of bytes actually written. -1 on error. -2 on eof
 void
 HandleSyscallWrite()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Write: Not impelemted");
-	printf("\nUnexpected exception Syscall Write: Not impelemted");
-	interrupt->Halt();
+	// Fetch params
+	int bufferAddr = machine->ReadRegister(4);
+	int byteCount = machine->ReadRegister(5);
+	int fileId = machine->ReadRegister(6);
+	
+	// Get file from file system
+	OpenFile* file = fileSystem->FileAt(fileId);
+	if (file == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: File system could not provide file with given id");
+		printf("\nUnexpected error: File system could not provide file with given id");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Prevent writing to stdin
+	if (file->Type() == 2)
+	{
+		DEBUG('a', "\nIllegal action: Could not write to stdin");
+		printf("\nIllegal action: Could not write to stdin");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	if (file->Type() == 1)
+	{
+		DEBUG('a', "\nIllegal action: Could not write to read-only file");
+		printf("\nIllegal action: Could not write to read-only file");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Get buffer from user space
+	char* buffer = User2System(bufferAddr, byteCount);
+	if (buffer == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for buffer");
+		printf("\nUnexpected error: System could not allocate memory for buffer");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Write
+	int byteWritten = 0;
+	if (file->Type() == 3)
+	{
+		// Write to console byte by byte
+		while (buffer[byteWritten] != '\0' && byteWritten < byteCount)
+		{
+			gSynchConsole->Write(buffer + byteWritten, 1);
+			++byteWritten;
+		}
+	}
+	else
+	{
+		// Write to file
+		byteWritten = file->Write(buffer, byteCount);
+	}
+
+	// Check for error and return result
+	if (byteWritten < 0)
+	{
+		DEBUG('a', "\nUnexpected error: Write to file failed");
+		printf("\nUnexpected error: Write to file failed");
+		machine->WriteRegister(2, -1);
+	}
+	else
+	{
+		machine->WriteRegister(2, byteWritten);
+	}
+
+	// Deallocate buffer
+	delete[] buffer;
 }
 
 
