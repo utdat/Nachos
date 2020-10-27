@@ -339,7 +339,8 @@ HandleSyscallReadS()
 	if (tempBuffer == NULL)
 	{
 		machine->WriteRegister(2, 0);
-		printf("\nUnexpected Error: System runned out of memory");
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for buffer");
+		printf("\nUnexpected error: System could not allocate memory for buffer");
 		return;
 	}
 	int len = 0;
@@ -349,8 +350,7 @@ HandleSyscallReadS()
 	tempBuffer[len] = '\0';
 	
 	// Result
-	System2User(buffAddr, len, tempBuffer);
-	machine->WriteRegister(2, 0);
+	System2User(buffAddr, len + 1, tempBuffer);
 	machine->WriteRegister(2, len);	
 
 	// Deallocate buffer
