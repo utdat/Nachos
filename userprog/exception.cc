@@ -103,6 +103,42 @@ System2User(int virtAddr, int len, char* buffer)
 }
 
 
+// Load process with specified ID to memory and start it
+// This function is mainly used for thread fork
+// param pid: Id of process
+void 
+StartProcess(int pid)
+{
+	// Load file
+	char* executableName = gThreadNames[pid];
+	OpenFile* executable = fileSystem->Open(executableName);
+	if (executable == NULL)
+	{
+		DEBUG('a', "\nUnexpected Error: File system could not open executable file");
+		printf("\nUnexpected Error: File system could not open executable file");
+		return;
+	}
+
+	// Create addrspace for thread
+	AddrSpace* space = new AddrSpace(executable);
+	if (space == NULL)
+	{
+		DEBUG('a', "\nUnexpected Error: System can not allocate memory for AddrSpace");
+		printf("\nUnexpected Error: System can not allocate memory for AddrSpace");
+		return;
+	}
+
+	// This part is written based on StartProcess function in progtest.cc
+	currentThread->space = space;
+	space->InitRegisters();
+	space->RestoreState();
+	machine->Run();
+	ASSERT(FALSE);
+
+	// Free pre-created OpenFile object
+	delete executable;
+}
+
 // Handle syscall Halt
 // Print system information and halt the os
 void
