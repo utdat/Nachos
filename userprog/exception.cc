@@ -206,8 +206,8 @@ HandleSyscallOpen()
 	char* fileName = User2System(fileNameAddr, MAX_LENGTH);
 	if (fileName == NULL) // Cant get file name
 	{
-		DEBUG('a', "\nUnexpected Error: System runned out of memory");
-		printf("\nUnexpected Error: System runned out of memory");
+		DEBUG('a', "\nUnexpected Error: System could not allocate memory for file name");
+		printf("\nUnexpected Error: System could not allocate memory for file name");
 		machine->WriteRegister(2, -1);
 		return;
 	}
@@ -413,7 +413,7 @@ ExceptionHandler(ExceptionType which)
     			case SC_Halt: // Print system information and halt the os
     				HandleSyscallHalt();
     				break;
-				case SC_Exit: // TODO: Describe syscall here
+				case SC_Exit: // Program exit
 					HandleSyscallExit();
 					break;
 				case SC_Exec: // TODO: Describe syscall here
@@ -422,19 +422,19 @@ ExceptionHandler(ExceptionType which)
 				case SC_Join: // TODO: Describe syscall here		
 					HandleSyscallJoin();
 					break;
-				case SC_Create:	// TODO: Describe syscall here 
+				case SC_Create:	// Create a file 
 					HandleSyscallCreate();
 					break;
-				case SC_Open: // TODO: Describe syscall here	
+				case SC_Open: // Open a file in file system	
 					HandleSyscallOpen();
 					break;
-				case SC_Read: // TODO: Describe syscall here
+				case SC_Read: // Read certain number of bytes from file in file system
 					HandleSyscallRead();
 					break;
-				case SC_Write: // TODO: Describe syscall here
+				case SC_Write: // Write certain number of bytes to file in file system
 					HandleSyscallWrite();
 					break;
-				case SC_Close: // TODO: Describe syscall here	
+				case SC_Close: // Close a file in file system
 					HandleSyscallClose();
 					break;
 				case SC_Fork: // TODO: Describe syscall	here
