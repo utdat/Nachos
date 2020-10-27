@@ -91,8 +91,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 						// at least until we have
 						// virtual memory
 	// Check if numPages require more than available physic pages
-	int availablePages = gPhysicPages->NumClear();
-	if (availablePages < 0 || numPages > (unsigned int)gPhysicPages->NumClear())
+	if (numPages > (unsigned int)gPhysicPages->NumClear())
 	{
 		DEBUG('a', "\nUnexpected Error: Not enough memory for initializing new process");
 		printf("\nUnexpected Error: Not enough memory for initializing new process");
