@@ -273,8 +273,8 @@ HandleSyscallRead()
 	// Check for reading stdout
 	if (file->Type() == 3)
 	{
-		DEBUG('a', "\nUnexpected error: Could not read from stdout");
-		printf("\nUnexpected error: Could not read from stdout");
+		DEBUG('a', "\nIllegal action: Could not read from stdout");
+		printf("\nIllegal action: Could not read from stdout");
 		machine->WriteRegister(2, -1);
 		return;
 	}
@@ -324,7 +324,8 @@ HandleSyscallRead()
 
 
 // Handle syscall Write
-// TODO: Describe this function
+// Write certain specified bytes to file with id given
+// Return number of bytes actually written.
 void
 HandleSyscallWrite()
 {
