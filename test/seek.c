@@ -8,7 +8,8 @@
 #define PROGRAM_INS_LEN 75
 #define REQ_FILENAME "File name: "
 #define REQ_FILENAME_LEN 11
-
+#define MSG_EOF "\n(EOF)\n"
+#define MSG_EOF_LEN 7
 
 int main()
 {
@@ -38,7 +39,13 @@ int main()
 	}
 
 	// Seek at eof
-		
+	
+	// Seek at eof
+	Seek(-1, fid);
+	if (Read(&c, 1, fid) == -2)
+	{
+		PrintS(MSG_EOF, MSG_EOF_LEN);
+	}	
 
 	return 0;
 }
