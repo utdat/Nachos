@@ -36,6 +36,16 @@ extern Timer *timer;				// the hardware alarm clock
 extern Machine* machine;	// user program memory and registers
 #include "synchcons.h"
 extern SynchConsole* gSynchConsole;	// console interaction
+#include "synch.h"
+#include "bitmap.h"
+#define PHYSIC_PAGES_NUM 256
+#define MAX_PROCESS_NUM 16
+extern Semaphore* gAddrLock; // Semaphore control address space
+extern BitMap* gPhysicPages; // Bitmap manage physic frames
+extern BitMap* gPages; // Manage pages
+extern int* gProcParentIds; // List of id of parent of process
+extern char** gThreadNames; // List of threads name
+
 #endif
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 
