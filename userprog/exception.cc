@@ -161,13 +161,66 @@ HandleSyscallExit()
 
 
 // Handle syscall Exec
-// TODO: Describe this function
+// Execute a program, given path to program file
 void
 HandleSyscallExec()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Exec: Not impelemted");
-	printf("\nUnexpected exception Syscall Exec: Not impelemted");
-	interrupt->Halt();
+	// Fetch param
+	int filenameAddr = machine->ReadRegister(4);
+	char* filename = User2System(filenameAddr, MAX_LENGTH);
+	if (filename == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for file name");
+		printf("\nUnexpected error: System could not allocate memory for file name");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Try to open file. Just a check. Close file immediately after open
+	OpenFile* file = fileSystem->Open(filename);
+	if (file == NULL)
+	{
+		DEBUG('a', "\nUnexpected Error: System could not open specified file");
+		printf("\nUnexpected Error: System could not open specified file");
+		machine->WriteRegister(2, -1);
+		delete filename;
+		return;
+	}
+	delete file;
+
+	// Assign a id for new thread
+	int pid = gPages->Find();
+	if (pid < 0)
+	{
+		DEBUG('a', "\nUnexpected error: No free page available for new thread");
+		printf("\nUnexpected error: No free page available for new thread");
+		delete filename;		
+	}
+
+	// Create thread
+	Thread* thread = new Thread(filename);
+	if (thread == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for new thread");
+		printf("\nUnexpected error: System could not allocate memory for new thread");
+		gPages->Clear(pid);
+		delete filename;
+		return;
+	}
+	thread->setId(pid);
+
+	// Save thread info
+	gThreadNames[pid] = filename;
+	gProcParentIds[pid] = currentThread->getId();
+	
+	// Fork thread
+	thread->Fork(StartProcess, pid);
+	
+	// Context switch
+	currentThread->Yield();
+
+	// Return
+	machine->WriteRegister(2, pid);
 }
 
 
@@ -646,7 +699,7 @@ ExceptionHandler(ExceptionType which)
 				case SC_Exit: // Program exit
 					HandleSyscallExit();
 					break;
-				case SC_Exec: // TODO: Describe syscall here
+				case SC_Exec: // Execute a program, given path to program file
 					HandleSyscallExec();
 					break;
 				case SC_Join: // TODO: Describe syscall here		
