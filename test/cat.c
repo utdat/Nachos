@@ -7,7 +7,7 @@
 
 // Size of buffer
 #define MAX_FILE_LENGTH 64
-#define BUFFER_SIZE 10
+#define BUFFER_SIZE 100
 
 // Constants for file operations
 #define OPEN_READ_WRITE 0
