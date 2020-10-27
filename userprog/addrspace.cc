@@ -62,6 +62,14 @@ SwapHeader (NoffHeader *noffH)
 
 AddrSpace::AddrSpace(OpenFile *executable)
 {
+	// Check for null input
+	if (executable == NULL)
+	{
+		DEBUG('a', "\nUnexpected Error when creating AddrSpace: Null executable");
+		printf("\nUnexpected Error when creating AddrSpace: Null executable");
+		return;
+	}
+
     NoffHeader noffH;
     unsigned int i, size;
 
@@ -82,6 +90,14 @@ AddrSpace::AddrSpace(OpenFile *executable)
 						// to run anything too big --
 						// at least until we have
 						// virtual memory
+	// Check if numPages require more than available physic pages
+	int availablePages = gPhysicPages->NumClear();
+	if (availablePages < 0 || numPages > (unsigned int)gPhysicPages->NumClear())
+	{
+		DEBUG('a', "\nUnexpected Error: Not enough memory for initializing new process");
+		printf("\nUnexpected Error: Not enough memory for initializing new process");
+		return;
+	}
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
@@ -97,7 +113,9 @@ AddrSpace::AddrSpace(OpenFile *executable)
 					// a separate page, we could set its 
 					// pages to be read-only
     }
-    
+
+	/* Old code. Single processing, replace by code below
+//   
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
     bzero(machine->mainMemory, size);
@@ -115,16 +133,39 @@ AddrSpace::AddrSpace(OpenFile *executable)
         executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
+	*/
+	
+	if (noffH.code.size > 0)
+	{
+		for (i = 0; i < numPages; ++i)
+		{
+			char* loc = &(machine->mainMemory[noffH.code.virtualAddr]) + (pageTable[i].physicalPage * PageSize);	
+			executable->ReadAt(loc, PageSize, noffH.code.inFileAddr + i * PageSize);
+		}
+	}
 
+	if (noffH.initData.size > 0)
+	{
+		for (i = 0; i < numPages; ++i)
+		{
+			char* loc = &(machine->mainMemory[noffH.initData.virtualAddr]) + pageTable[i].physicalPage * PageSize;
+			executable->ReadAt(loc, PageSize, noffH.initData.inFileAddr + i * PageSize);
+		}
+	}
 }
 
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
-// 	Dealloate an address space.  Nothing for now!
+// 	Dealloate an address space.
+//  Clear state of global physical pages occupied by this  addrspace
 //----------------------------------------------------------------------
 
 AddrSpace::~AddrSpace()
 {
+	for (int i = 0; i < numPages; i++)
+	{
+		gPhysicPages->Clear(pageTable[i].physicalPage);
+	}
    delete pageTable;
 }
 
