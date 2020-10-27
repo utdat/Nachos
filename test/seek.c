@@ -46,6 +46,7 @@ int main()
 	{
 		PrintS(MSG_EOF, MSG_EOF_LEN);
 	}	
-
+	
+	Close(fid);
 	return 0;
 }
