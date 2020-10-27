@@ -26,7 +26,7 @@ int main()
 	int fileId;	
 	int byteRead;
 		
-	PrintS(PROGRAM_INS, PROGRAM_INS_LEN);	
+	Write(PROGRAM_INS, PROGRAM_INS_LEN, STDOUT);	
 	
 	// Get file name
 	Read(fileName, MAX_FILE_LENGTH, STDIN);
@@ -38,13 +38,13 @@ int main()
 	byteRead = Read(fileBuffer, BUFFER_SIZE, fileId);
 	while (byteRead > 0)
 	{
-		PrintS(fileBuffer, byteRead);
+		Write(fileBuffer, byteRead, STDOUT);
 		byteRead = Read(fileBuffer, BUFFER_SIZE, fileId);
 	}
 
 	// Close file
 	Close(fileId);
 	
-	PrintS("\n", 1);
+	Write("\n", 1, STDOUT);
 	return 0;
 }
