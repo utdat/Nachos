@@ -30,8 +30,10 @@
 #define SC_Fork		9
 #define SC_Yield	10
 
-#define SC_PrintS	11
-#define SC_ReadS	12
+#define SC_Seek		11
+
+#define SC_PrintS	12
+#define SC_ReadS	13
 
 #ifndef IN_ASM
 
@@ -127,6 +129,12 @@ void Fork(void (*func)());
  * or not. 
  */
 void Yield();	
+
+
+/* Seek file cursor to specified position in an opened file
+ * Return position in file, -1 if error
+ */
+int Seek(int pos, OpenFileId id);
 
 
 /* Print c string with specified len to console
