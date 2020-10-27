@@ -443,6 +443,62 @@ HandleSyscallYield()
 }
 
 
+// Handle syscall Seek
+// Seek file cursor to a specified postion in an opened file
+void HandleSyscallSeek()
+{
+	// Fetch params
+	int pos = machine->ReadRegister(4);
+	int fileId = machine->ReadRegister(5);
+
+	// Try to get the file
+	OpenFile* file = fileSystem->FileAt(fileId);
+	if (file == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: File system could not provide file with given Id");
+		printf("\nUnexpected error: File system could not provide file with given Id");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Prohibit Seeking console
+	if (file->Type() == 2)
+	{
+		DEBUG('a', "\nIllegal action: Could not seek STDIN");
+		printf("\nIllegal action: Could not seek STDIN");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+	if (file->Type() == 3)
+	{
+		DEBUG('a', "\nIllegal action: Could not seek STDOUT");
+		printf("\nIllegal action: Could not seek STDOUT");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// If pos is -1, seek to the end of file
+	if (pos == -1)
+	{
+		pos = file->Length();
+	}
+
+	// Seek file if possible
+	if (pos < 0 || pos > file->Length())
+	{
+		// Error. Pos out of file
+		DEBUG('a', "\nUnexpected error: Could not seek file at given position");
+		printf("\nUnexpected error: Could not seek file at given positio");
+		machine->WriteRegister(2, -1);
+	}
+	else
+	{
+		// Seek-able
+		file->Seek(pos);
+		machine->WriteRegister(2, pos);
+	}
+}
+
 // Handle syscall PrintS
 // Print a string to console
 void
@@ -582,6 +638,9 @@ ExceptionHandler(ExceptionType which)
 					HandleSyscallYield();
 					break;
 
+				case SC_Seek: // Seek file cursor to a specified position
+					HandleSyscallSeek();
+					break;
 				case SC_PrintS: // Print a string to console
 					HandleSyscallPrintS();
 					break;
