@@ -78,6 +78,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
     	SwapHeader(&noffH);
     ASSERT(noffH.noffMagic == NOFFMAGIC);
+	gAddrLock->P();
 
 // how big is address space?
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
@@ -104,15 +105,17 @@ AddrSpace::AddrSpace(OpenFile *executable)
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	pageTable[i].physicalPage = i;
+	pageTable[i].physicalPage = gPhysicPages->Find();
 	pageTable[i].valid = TRUE;
 	pageTable[i].use = FALSE;
 	pageTable[i].dirty = FALSE;
 	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
 					// a separate page, we could set its 
 					// pages to be read-only
+	bzero(&(machine->mainMemory[pageTable[i].physicalPage * PageSize]), PageSize);
     }
 
+	gAddrLock->V();
 	/* Old code. Single processing, replace by code below
 //   
 // zero out the entire address space, to zero the unitialized data segment 
@@ -133,13 +136,12 @@ AddrSpace::AddrSpace(OpenFile *executable)
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
 	*/
-	
 	if (noffH.code.size > 0)
 	{
 		for (i = 0; i < numPages; ++i)
 		{
 			char* loc = &(machine->mainMemory[noffH.code.virtualAddr]) + (pageTable[i].physicalPage * PageSize);	
-			executable->ReadAt(loc, PageSize, noffH.code.inFileAddr + i * PageSize);
+			executable->ReadAt(loc, PageSize, noffH.code.inFileAddr + (i * PageSize));
 		}
 	}
 
@@ -147,8 +149,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	{
 		for (i = 0; i < numPages; ++i)
 		{
-			char* loc = &(machine->mainMemory[noffH.initData.virtualAddr]) + pageTable[i].physicalPage * PageSize;
-			executable->ReadAt(loc, PageSize, noffH.initData.inFileAddr + i * PageSize);
+			char* loc = &(machine->mainMemory[noffH.initData.virtualAddr]) + (pageTable[i].physicalPage * PageSize);
+			executable->ReadAt(loc, PageSize, noffH.initData.inFileAddr + (i * PageSize));
 		}
 	}
 }
