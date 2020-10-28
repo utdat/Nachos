@@ -159,6 +159,7 @@ Initialize(int argc, char **argv)
 	gAddrLock = new Semaphore("addrLock", 1); // Init semaphore
 	gPhysicPages = new BitMap(PHYSIC_PAGES_NUM); // Bitmap manage physic frames
 	gPages = new BitMap(MAX_PROCESS_NUM); // Manage pages
+	gPages->Mark(0);
 	gProcParentIds = new int[MAX_PROCESS_NUM]; // List of id of parent of process
 	gThreadNames = new char*[MAX_PROCESS_NUM]; // List of threads name
 	
