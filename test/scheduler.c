@@ -15,5 +15,8 @@ int main()
 	PrintS(SCHEDULER_INS, SCHEDULER_INS_LEN);
 	pingId = Exec(PING);
 	pongId = Exec(PONG);
+	Await(pingId);
+	Await(pongId);
+	PrintS("\n", 1);
 	return 0;
 }

@@ -132,11 +132,12 @@ StartProcess(int pid)
 	currentThread->space = space;
 	space->InitRegisters();
 	space->RestoreState();
-	machine->Run();
-	ASSERT(FALSE);
 
 	// Free pre-created OpenFile object
 	delete executable;
+
+	machine->Run();
+	ASSERT(FALSE);
 }
 
 // Handle syscall Halt
