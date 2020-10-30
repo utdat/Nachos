@@ -92,10 +92,11 @@ typedef int OpenFileId;
 /* Create a Nachos file, with "name" */
 int Create(char *name);
 
-/* Open the Nachos file "name", and return an "OpenFileId" that can 
+/* Open the Nachos file "name" with "type" (open, write), and return an "OpenFileId" that can 
  * be used to read and write to the file.
+ * type 0: Read & Write, 1: Read-only, 2: stdin, 3: stdout
  */
-OpenFileId Open(char *name);
+OpenFileId Open(char *name, int type);
 
 /* Write "size" bytes from "buffer" to the open file. */
 void Write(char *buffer, int size, OpenFileId id);
