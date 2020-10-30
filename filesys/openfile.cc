@@ -11,6 +11,8 @@
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
+// TODO: Type check when read and write?
+
 #include "copyright.h"
 #include "filehdr.h"
 #include "openfile.h"
@@ -33,6 +35,24 @@ OpenFile::OpenFile(int sector)
     hdr->FetchFrom(sector);
     seekPosition = 0;
 }
+
+
+//----------------------------------------------------------------------
+// OpenFile::OpenFile
+// 	Open a Nachos file for reading and writing.  Bring the file header
+//	into memory while the file is open.
+//
+//	"sector" -- the location on disk of the file header for this file
+//  "t" -- the type of the file open (read, write,..)
+//----------------------------------------------------------------------
+OpenFile::OpenFile(int sector, int t)
+{
+	hdr = new FileHeader;
+	hdr->FetchFrom(sector);
+	seekPosition = 0;
+	_type = t;
+}
+
 
 //----------------------------------------------------------------------
 // OpenFile::~OpenFile
@@ -194,4 +214,14 @@ int
 OpenFile::Length() 
 { 
     return hdr->FileLength(); 
+}
+
+
+//----------------------------------------------------------------------
+// OpenFile::Type
+// 	Return the type of file opened (read, write, ...)
+//----------------------------------------------------------------------
+int OpenFile::Type()
+{
+	return _type;
 }

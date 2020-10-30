@@ -27,8 +27,12 @@
 					// Nachos file system as calls to UNIX!
 					// See definitions listed under #else
 class OpenFile {
+  private:
+    // Type of stream (read, write,...)
+    int _type;
   public:
     OpenFile(int f) { file = f; currentOffset = 0; }	// open the file
+	OpenFile(int f, int t) { file = f; currentOffset = 0; _type = t; }
     ~OpenFile() { Close(file); }			// close the file
 
     int ReadAt(char *into, int numBytes, int position) { 
@@ -52,6 +56,8 @@ class OpenFile {
 		}
 
     int Length() { Lseek(file, 0, 2); return Tell(file); }
+
+	int Type() { return _type; }
     
   private:
     int file;
@@ -62,9 +68,18 @@ class OpenFile {
 class FileHeader;
 
 class OpenFile {
+  private:
+    int _type;	// type of stream to file
+				// type 1: read and write
+				// type 2: read only
+				// type 3: stdin
+				// type 4: stdout
+
   public:
     OpenFile(int sector);		// Open a file whose header is located
 					// at "sector" on the disk
+	OpenFile(int sector, int t);	// Open a file whose header is located at "sector" on the disk
+									// Set the type also
     ~OpenFile();			// Close the file
 
     void Seek(int position); 		// Set the position from which to 
@@ -85,6 +100,7 @@ class OpenFile {
 					// file (this interface is simpler 
 					// than the UNIX idiom -- lseek to 
 					// end of file, tell, lseek back 
+	int Type(); // Return the type of stream (read, write, ...)
     
   private:
     FileHeader *hdr;			// Header for this file 
