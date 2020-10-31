@@ -477,6 +477,20 @@ FileSystem::Print()
 
 
 //----------------------------------------------------------------------
+// FileSystem::FileAt
+// Return file object opened with specified id
+//----------------------------------------------------------------------
+OpenFile* FileSystem::FileAt(OpenFileId id)
+{
+	if (id < 0 || id >= MAX_OPEN_FILE)
+	{
+		return NULL;
+	}
+	return _open_files[id];
+}
+
+
+//----------------------------------------------------------------------
 // FileSystem::FindFreeIndex
 // Get the available slot on open files table
 //----------------------------------------------------------------------
