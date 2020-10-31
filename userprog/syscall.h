@@ -100,8 +100,10 @@ int Create(char *name);
  */
 OpenFileId Open(char *name, int type);
 
-/* Write "size" bytes from "buffer" to the open file. */
-void Write(char *buffer, int size, OpenFileId id);
+/* Write "size" bytes from "buffer" to the open file. 
+ * Return number of bytes actually written
+*/
+int Write(char *buffer, int size, OpenFileId id);
 
 /* Read "size" bytes from the open file into "buffer".  
  * Return the number of bytes actually read -- if the open file isn't

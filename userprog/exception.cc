@@ -246,24 +246,162 @@ HandleSyscallOpen()
 
 
 // Handle syscall Read
-// TODO: Describe this function
+// Read data from file with file id given
+// If file is stdin and stdout, use console IO instead of file system
+// Return number of bytes read/written
+// Return -1 on error, -2 on eof reached
 void
 HandleSyscallRead()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Read: Not impelemted");
-	printf("\nUnexpected exception Syscall Write: Not impelemted");
-	interrupt->Halt();
+	// Fetch param
+	int bufferAddr = machine->ReadRegister(4);
+	int byteCount = machine->ReadRegister(5);
+	int fileId = machine->ReadRegister(6);
+	
+	// Get file from file system
+	OpenFile* file = fileSystem->FileAt(fileId);
+
+	// Check for file with given id not found
+	if (file == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: File system could not provide file with given id");
+		printf("\nUnexpected error: File system could not provide file with given id");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Check for reading stdout
+	if (file->Type() == 3)
+	{
+		DEBUG('a', "\nIllegal action: Could not read from stdout");
+		printf("\nIllegal action: Could not read from stdout");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Allocate space for data read. 1 more byte for null terminated charecter
+	char* buffer = new char[byteCount];
+
+	// Read data
+	int byteRead;
+	if (file->Type() == 2)
+	{	
+		// Read from console. Reserved final byte from null character
+		byteRead = gSynchConsole->Read(buffer, byteCount - 1);
+		if (byteRead > 0)
+		{
+			// Read successfully
+			buffer[byteRead] = '\0';
+			System2User(bufferAddr, byteRead + 1, buffer);
+			machine->WriteRegister(2, byteRead);
+		}
+		else
+		{
+			// End of file
+			machine->WriteRegister(2, -2);
+		}
+	}
+	else
+	{
+		// Read from file
+		byteRead = file->Read(buffer, byteCount);
+		if (byteRead > 0)
+		{
+			// Read successfully
+			System2User(bufferAddr, byteRead, buffer);
+			machine->WriteRegister(2, byteRead);
+		}
+		else
+		{
+			// End of file
+			machine->WriteRegister(2, -2);
+		}
+	}
+	
+	// Free buffer space
+	delete[] buffer;
 }
 
 
 // Handle syscall Write
-// TODO: Describe this function
+// Write certain specified bytes to file with id given
+// Return number of bytes actually written. -1 on error. -2 on eof
 void
 HandleSyscallWrite()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Write: Not impelemted");
-	printf("\nUnexpected exception Syscall Write: Not impelemted");
-	interrupt->Halt();
+	// Fetch params
+	int bufferAddr = machine->ReadRegister(4);
+	int byteCount = machine->ReadRegister(5);
+	int fileId = machine->ReadRegister(6);
+	
+	// Get file from file system
+	OpenFile* file = fileSystem->FileAt(fileId);
+	if (file == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: File system could not provide file with given id");
+		printf("\nUnexpected error: File system could not provide file with given id");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Prevent writing to stdin
+	if (file->Type() == 2)
+	{
+		DEBUG('a', "\nIllegal action: Could not write to stdin");
+		printf("\nIllegal action: Could not write to stdin");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	if (file->Type() == 1)
+	{
+		DEBUG('a', "\nIllegal action: Could not write to read-only file");
+		printf("\nIllegal action: Could not write to read-only file");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Get buffer from user space
+	char* buffer = User2System(bufferAddr, byteCount);
+	if (buffer == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for buffer");
+		printf("\nUnexpected error: System could not allocate memory for buffer");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Write
+	int byteWritten = 0;
+	if (file->Type() == 3)
+	{
+		// Write to console byte by byte
+		while (buffer[byteWritten] != '\0' && byteWritten < byteCount)
+		{
+			gSynchConsole->Write(buffer + byteWritten, 1);
+			++byteWritten;
+		}
+	}
+	else
+	{
+		// Write to file
+		byteWritten = file->Write(buffer, byteCount);
+	}
+
+	// Check for error and return result
+	if (byteWritten < 0)
+	{
+		DEBUG('a', "\nUnexpected error: Write to file failed");
+		printf("\nUnexpected error: Write to file failed");
+		machine->WriteRegister(2, -1);
+	}
+	else
+	{
+		machine->WriteRegister(2, byteWritten);
+	}
+
+	// Deallocate buffer
+	delete[] buffer;
 }
 
 
