@@ -71,7 +71,9 @@ class FileSystem {
 		// Init first two file (stdin and stdout)
 		Create("stdin", 0);
 		Create("stdout", 0);
-		_open_files[0] = Open("stdin", 2);
+
+		// Open stdin and stdout. Its file id should be 0 and 1
+		_open_files[0] =  Open("stdin", 2);
 		_open_files[1] = Open("stdout", 3);
 	}
 
@@ -83,11 +85,11 @@ class FileSystem {
 		{
 			if (_open_files[i] != NULL)
 			{
-				delete _open_files[i];
+				delete _open_files[i];	
 			}
 		}
 
-		delete _open_files;
+		delete[] _open_files;
 	}
 
 
@@ -99,25 +101,20 @@ class FileSystem {
 	return TRUE; 
 	}
 
-	// Open file with type sepcified
+	// Default method
     OpenFile* Open(char *name) {
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
 
 	  if (fileDescriptor == -1) return NULL;
-	  int freeIndex = FindFreeIndex();
-	  if (freeIndex < 0) return NULL;
-	  _open_files[freeIndex] = new OpenFile(fileDescriptor);
-	  return _open_files[freeIndex];
+
+	  return new OpenFile(fileDescriptor);
       }
 	
 	OpenFile* Open(char* name, int type){
 	  int fileDescriptor = OpenForReadWrite(name, FALSE);
 
 	  if (fileDescriptor == -1) return NULL;
-	  int freeIndex = FindFreeIndex();
-	  if (freeIndex < 0) return NULL;
-	  _open_files[freeIndex] = new OpenFile(fileDescriptor, type);
-	  return _open_files[freeIndex];
+	  return new OpenFile(fileDescriptor, type);
 	  }	
 	
 	OpenFile* Open(char* name, int type, OpenFileId& id){

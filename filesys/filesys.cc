@@ -170,7 +170,7 @@ FileSystem::~FileSystem()
 			delete _open_files[i];
 		}
 	}
-	delete _open_files;
+	delete[] _open_files;
 }
 
 
