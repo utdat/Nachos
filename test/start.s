@@ -129,13 +129,35 @@ Yield:
 	syscall
 	j	$31
 	.end Yield
-.globl CLIRead
-.ent CLIRead
-CLIRead:
-	addiu $2,$0,SC_CLIRead
+
+
+	.globl Seek
+	.ent 	Seek
+Seek:
+	addiu $2,$0,SC_Seek
 	syscall
 	j $31
-	.end CLIRead
+	.end Seek
+
+
+	.globl PrintS
+	.ent 	PrintS
+PrintS:
+	addiu $2,$0,SC_PrintS
+	syscall
+	j $31
+	.end PrintS
+
+
+	.globl ReadS
+	.ent 	ReadS
+ReadS:
+	addiu $2,$0,SC_ReadS
+	syscall
+	j $31
+	.end ReadS
+
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

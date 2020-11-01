@@ -30,7 +30,10 @@
 #define SC_Fork		9
 #define SC_Yield	10
 
-#define SC_PrintS	11
+#define SC_Seek		11
+
+#define SC_PrintS	12
+#define SC_ReadS	13
 
 #ifndef IN_ASM
 
@@ -89,15 +92,18 @@ typedef int OpenFileId;
 #define ConsoleOutput	1  
  
 /* Create a Nachos file, with "name" */
-void Create(char *name);
+int Create(char *name);
 
-/* Open the Nachos file "name", and return an "OpenFileId" that can 
+/* Open the Nachos file "name" with "type" (open, write), and return an "OpenFileId" that can 
  * be used to read and write to the file.
+ * type 0: Read & Write, 1: Read-only, 2: stdin, 3: stdout
  */
-OpenFileId Open(char *name);
+OpenFileId Open(char *name, int type);
 
-/* Write "size" bytes from "buffer" to the open file. */
-void Write(char *buffer, int size, OpenFileId id);
+/* Write "size" bytes from "buffer" to the open file. 
+ * Return number of bytes actually written
+*/
+int Write(char *buffer, int size, OpenFileId id);
 
 /* Read "size" bytes from the open file into "buffer".  
  * Return the number of bytes actually read -- if the open file isn't
@@ -127,9 +133,20 @@ void Fork(void (*func)());
 void Yield();	
 
 
+/* Seek file cursor to specified position in an opened file
+ * Return position in file, -1 if error
+ */
+int Seek(int pos, OpenFileId id);
+
+
 /* Print c string with specified len to console
  */
 void PrintS(char* str, int len);	
+
+
+/* Read string from input (in form of c string), return length of string
+*/
+int ReadS(char* buffer, int bufferSize);
 
 #endif /* IN_ASM */
 

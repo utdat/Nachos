@@ -49,18 +49,21 @@
 //----------------------------------------------------------------------
 
 
+// Max length of filename allow on system
+#define MAX_LENGTH 64
+
 // Copy memory from user memory to system memory
 // param virtAddr: Address in user memory
 // param limit: Max length of memory space
-// return: Data as array of byte
+// return: Data as array of byte. Must be freed manually
 char* 
 User2System(int virtAddr,int limit)
 {
-	if (limit <= 0) return nullptr;
+	if (limit <= 0) return NULL;
 
 	// Buffer to hold memory
 	char* buffer = new char[limit + 1];
-	if (buffer == nullptr) return nullptr;
+	if (buffer == NULL) return NULL;
 	memset(buffer, '\0', limit + 1);
 
 	// Read memory from user memory and parse it to buffer
@@ -92,7 +95,7 @@ System2User(int virtAddr, int len, char* buffer)
 	while (i < len)
 	{
 		int c = (int) buffer[i];
-		machine->WriteMem(virtAddr + 1, 1, c);
+		machine->WriteMem(virtAddr + i, 1, c);
 
 		if (c == 0) break;
 		i++;
@@ -115,9 +118,9 @@ HandleSyscallHalt()
 void
 HandleSyscallExit()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Exit: Not impelemted");
-	printf("\nUnexpected exception Syscall Exit: Not impelemted");
-	interrupt->Halt();
+	// Program exit
+	// Do nothing other than log debug info
+	DEBUG('a', "\nException Syscall Exit:");
 }
 
 
@@ -143,58 +146,278 @@ HandleSyscallJoin()
 }
 
 
-// Handle syscall Close
-// TODO: Describe this function
+// Handle syscall Create
+// Create file with specified name in Nachos file system
+// Set result 0 if success, -1 otherwise
 void
 HandleSyscallCreate()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Create: Not impelemted");
-	printf("\nUnexpected exception Syscall Create: Not impelemted");
-	interrupt->Halt();
+	// Get file name
+	int filenameAddr = machine->ReadRegister(4);
+	char* filename = User2System(filenameAddr, MAX_LENGTH);
+
+	if (filename == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for file name");
+		printf("\nUnexpected error: System could not allocate memory for file name");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Create empty file using built-in file system
+	// Catch the error from built-in file system (if any)
+	if (!fileSystem->Create(filename, 0))
+	{
+		DEBUG('a', "\nUnexpected error: System could not create file");
+		printf("\nUnexpected error: System could not create file");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// File created successfully
+	machine->WriteRegister(2, 0);
+	delete[] filename;
 }
 
 
 // Handle syscall Open
-// TODO: Describe this function
+// Open file with specified file name and type
+// Return file ID in file system
 void
 HandleSyscallOpen()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Open: Not impelemted");
-	printf("\nUnexpected exception Syscall Open: Not impelemted");
-	interrupt->Halt();
+	// Fetch params
+	int fileNameAddr = machine->ReadRegister(4);
+	int type = machine->ReadRegister(5);
+	
+	// Process stdin and stdout open
+	if (type == 2)
+	{
+		machine->WriteRegister(2, 0);
+		return;
+	}
+	if (type == 3)
+	{
+		machine->WriteRegister(3, 0);
+		return;
+	}
+
+	// Bound check file name
+	char* fileName = User2System(fileNameAddr, MAX_LENGTH);
+	if (fileName == NULL) // Cant get file name
+	{
+		DEBUG('a', "\nUnexpected Error: System could not allocate memory for file name");
+		printf("\nUnexpected Error: System could not allocate memory for file name");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+	if (fileName[0] == '\0') // Empty name
+	{
+		DEBUG('a', "\nUnexpected error when trying to open file: Invalid file name");
+		printf("\nUnexpected error when trying to open file: Invalid file name");
+		machine->WriteRegister(2, -1);
+		delete[] fileName;
+		return;
+	}
+	
+	// Try to open file and get id
+	int fileId = 0; 
+	if (fileSystem->Open(fileName, type, fileId) != NULL)
+	{
+		machine->WriteRegister(2, fileId);
+	}
+	else if (fileId < 0)
+	{
+		
+		DEBUG('a', "\nUnexpected error: Not enough slot for opening file");
+		printf("\nUnexpected error: Not enough slot for opening file");
+		machine->WriteRegister(2, -1);	
+	}
+	else
+	{
+		DEBUG('a', "\nUnexpected error: Could not open file. Maybe file do not exist");
+		printf("\nUnexpected error: Could not open file. Maybe file do not exist");
+		machine->WriteRegister(2, -1);
+	}
+	
+	// Free space used for file name
+	delete[] fileName;
 }
 
 
 // Handle syscall Read
-// TODO: Describe this function
+// Read data from file with file id given
+// If file is stdin and stdout, use console IO instead of file system
+// Return number of bytes read/written
+// Return -1 on error, -2 on eof reached
 void
 HandleSyscallRead()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Read: Not impelemted");
-	printf("\nUnexpected exception Syscall Write: Not impelemted");
-	interrupt->Halt();
+	// Fetch param
+	int bufferAddr = machine->ReadRegister(4);
+	int byteCount = machine->ReadRegister(5);
+	int fileId = machine->ReadRegister(6);
+	
+	// Get file from file system
+	OpenFile* file = fileSystem->FileAt(fileId);
+
+	// Check for file with given id not found
+	if (file == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: File system could not provide file with given id");
+		printf("\nUnexpected error: File system could not provide file with given id");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Check for reading stdout
+	if (file->Type() == 3)
+	{
+		DEBUG('a', "\nIllegal action: Could not read from stdout");
+		printf("\nIllegal action: Could not read from stdout");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Allocate space for data read. 1 more byte for null terminated charecter
+	char* buffer = new char[byteCount];
+
+	// Read data
+	int byteRead;
+	if (file->Type() == 2)
+	{	
+		// Read from console. Reserved final byte from null character
+		byteRead = gSynchConsole->Read(buffer, byteCount - 1);
+		if (byteRead > 0)
+		{
+			// Read successfully
+			buffer[byteRead] = '\0';
+			System2User(bufferAddr, byteRead + 1, buffer);
+			machine->WriteRegister(2, byteRead);
+		}
+		else
+		{
+			// End of file
+			machine->WriteRegister(2, -2);
+		}
+	}
+	else
+	{
+		// Read from file
+		byteRead = file->Read(buffer, byteCount);
+		if (byteRead > 0)
+		{
+			// Read successfully
+			System2User(bufferAddr, byteRead, buffer);
+			machine->WriteRegister(2, byteRead);
+		}
+		else
+		{
+			// End of file
+			machine->WriteRegister(2, -2);
+		}
+	}
+	
+	// Free buffer space
+	delete[] buffer;
 }
 
 
 // Handle syscall Write
-// TODO: Describe this function
+// Write certain specified bytes to file with id given
+// Return number of bytes actually written. -1 on error. -2 on eof
 void
 HandleSyscallWrite()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Write: Not impelemted");
-	printf("\nUnexpected exception Syscall Write: Not impelemted");
-	interrupt->Halt();
+	// Fetch params
+	int bufferAddr = machine->ReadRegister(4);
+	int byteCount = machine->ReadRegister(5);
+	int fileId = machine->ReadRegister(6);
+	
+	// Get file from file system
+	OpenFile* file = fileSystem->FileAt(fileId);
+	if (file == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: File system could not provide file with given id");
+		printf("\nUnexpected error: File system could not provide file with given id");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Prevent writing to stdin
+	if (file->Type() == 2)
+	{
+		DEBUG('a', "\nIllegal action: Could not write to stdin");
+		printf("\nIllegal action: Could not write to stdin");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	if (file->Type() == 1)
+	{
+		DEBUG('a', "\nIllegal action: Could not write to read-only file");
+		printf("\nIllegal action: Could not write to read-only file");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Get buffer from user space
+	char* buffer = User2System(bufferAddr, byteCount);
+	if (buffer == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for buffer");
+		printf("\nUnexpected error: System could not allocate memory for buffer");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Write
+	int byteWritten = 0;
+	if (file->Type() == 3)
+	{
+		// Write to console byte by byte
+		while (buffer[byteWritten] != '\0' && byteWritten < byteCount)
+		{
+			gSynchConsole->Write(buffer + byteWritten, 1);
+			++byteWritten;
+		}
+	}
+	else
+	{
+		// Write to file
+		byteWritten = file->Write(buffer, byteCount);
+	}
+
+	// Check for error and return result
+	if (byteWritten < 0)
+	{
+		DEBUG('a', "\nUnexpected error: Write to file failed");
+		printf("\nUnexpected error: Write to file failed");
+		machine->WriteRegister(2, -1);
+	}
+	else
+	{
+		machine->WriteRegister(2, byteWritten);
+	}
+
+	// Deallocate buffer
+	delete[] buffer;
 }
 
 
 // Handle syscall Close
-// TODO: Describe this function
+// Close a file with given OpenFileId
 void
 HandleSyscallClose()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Close: Not impelemted");
-	printf("\nUnexpected exception Syscall Close: Not impelemted");
-	interrupt->Halt();
+	int fileId = machine->ReadRegister(4);
+	if (fileSystem->Close(fileId) < 0)
+	{
+		DEBUG('a', "\nUnexpected error when close a file: Invalid File ID");
+		printf("\nUnexpected error when close a file: Invalid File ID");
+	}
+	
+	// File was closed successfully
 }
 
 
@@ -220,6 +443,62 @@ HandleSyscallYield()
 }
 
 
+// Handle syscall Seek
+// Seek file cursor to a specified postion in an opened file
+void HandleSyscallSeek()
+{
+	// Fetch params
+	int pos = machine->ReadRegister(4);
+	int fileId = machine->ReadRegister(5);
+
+	// Try to get the file
+	OpenFile* file = fileSystem->FileAt(fileId);
+	if (file == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: File system could not provide file with given Id");
+		printf("\nUnexpected error: File system could not provide file with given Id");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Prohibit Seeking console
+	if (file->Type() == 2)
+	{
+		DEBUG('a', "\nIllegal action: Could not seek STDIN");
+		printf("\nIllegal action: Could not seek STDIN");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+	if (file->Type() == 3)
+	{
+		DEBUG('a', "\nIllegal action: Could not seek STDOUT");
+		printf("\nIllegal action: Could not seek STDOUT");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// If pos is -1, seek to the end of file
+	if (pos == -1)
+	{
+		pos = file->Length();
+	}
+
+	// Seek file if possible
+	if (pos < 0 || pos > file->Length())
+	{
+		// Error. Pos out of file
+		DEBUG('a', "\nUnexpected error: Could not seek file at given position");
+		printf("\nUnexpected error: Could not seek file at given positio");
+		machine->WriteRegister(2, -1);
+	}
+	else
+	{
+		// Seek-able
+		file->Seek(pos);
+		machine->WriteRegister(2, pos);
+	}
+}
+
 // Handle syscall PrintS
 // Print a string to console
 void
@@ -231,12 +510,45 @@ HandleSyscallPrintS()
 
 	int strAddr = machine->ReadRegister(4);
 	char* str = User2System(strAddr, len);
-	if (str == nullptr) return;
+	if (str == NULL) return;
 
 	// Write to console. Null character included
 	gSynchConsole->Write(str, len + 1);
 
 	delete[] str;
+}
+
+
+// Handle syscall ReadS
+// Read a string from console
+void
+HandleSyscallReadS()
+{
+	// Fetch params
+	int buffAddr = machine->ReadRegister(4);
+	int buffSize = machine->ReadRegister(5);
+
+	// Allocate temporary buffer for reading data
+	char* tempBuffer = new char[buffSize];
+	if (tempBuffer == NULL)
+	{
+		machine->WriteRegister(2, 0);
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for buffer");
+		printf("\nUnexpected error: System could not allocate memory for buffer");
+		return;
+	}
+	int len = 0;
+	
+	// Read data from console. Make sure this string is null-terminated (cstring)
+	len = gSynchConsole->Read(tempBuffer, buffSize - 1);
+	tempBuffer[len] = '\0';
+	
+	// Result
+	System2User(buffAddr, len + 1, tempBuffer);
+	machine->WriteRegister(2, len);	
+
+	// Deallocate buffer
+	delete[] tempBuffer;
 }
 
 
@@ -295,7 +607,7 @@ ExceptionHandler(ExceptionType which)
     			case SC_Halt: // Print system information and halt the os
     				HandleSyscallHalt();
     				break;
-				case SC_Exit: // TODO: Describe syscall here
+				case SC_Exit: // Program exit
 					HandleSyscallExit();
 					break;
 				case SC_Exec: // TODO: Describe syscall here
@@ -304,19 +616,19 @@ ExceptionHandler(ExceptionType which)
 				case SC_Join: // TODO: Describe syscall here		
 					HandleSyscallJoin();
 					break;
-				case SC_Create:	// TODO: Describe syscall here 
+				case SC_Create:	// Create a file 
 					HandleSyscallCreate();
 					break;
-				case SC_Open: // TODO: Describe syscall here	
+				case SC_Open: // Open a file in file system	
 					HandleSyscallOpen();
 					break;
-				case SC_Read: // TODO: Describe syscall here
+				case SC_Read: // Read certain number of bytes from file in file system
 					HandleSyscallRead();
 					break;
-				case SC_Write: // TODO: Describe syscall here
+				case SC_Write: // Write certain number of bytes to file in file system
 					HandleSyscallWrite();
 					break;
-				case SC_Close: // TODO: Describe syscall here	
+				case SC_Close: // Close a file in file system
 					HandleSyscallClose();
 					break;
 				case SC_Fork: // TODO: Describe syscall	here
@@ -326,8 +638,14 @@ ExceptionHandler(ExceptionType which)
 					HandleSyscallYield();
 					break;
 
+				case SC_Seek: // Seek file cursor to a specified position
+					HandleSyscallSeek();
+					break;
 				case SC_PrintS: // Print a string to console
 					HandleSyscallPrintS();
+					break;
+				case SC_ReadS: // Read a string from console
+					HandleSyscallReadS();
 					break;
 				default:
 					break;

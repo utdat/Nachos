@@ -35,7 +35,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort prints
+all: halt shell matmult sort prints echo createfile openclose cat copy seek
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -71,3 +71,40 @@ prints.o: prints.c
 prints: prints.o start.o
 	$(LD) $(LDFLAGS) start.o prints.o -o prints.coff
 	../bin/coff2noff prints.coff prints
+
+echo.o: echo.c
+	$(CC) $(CFLAGS) -c echo.c
+echo: echo.o start.o
+	$(LD) $(LDFLAGS) start.o echo.o -o echo.coff
+	../bin/coff2noff echo.coff echo
+
+createfile.o: createfile.c
+	$(CC) $(CFLAGS) -c createfile.c
+createfile: createfile.o start.o
+	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
+	../bin/coff2noff createfile.coff createfile
+
+openclose.o: openclose.c
+	$(CC) $(CFLAGS) -c openclose.c
+openclose: openclose.o start.o
+	$(LD) $(LDFLAGS) start.o openclose.o -o openclose.coff
+	../bin/coff2noff openclose.coff openclose
+
+cat.o: cat.c
+	$(CC) $(CFLAGS) -c cat.c
+cat: cat.o start.o
+	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
+	../bin/coff2noff cat.coff cat
+
+copy.o: copy.c
+	$(CC) $(CFLAGS) -c copy.c
+copy: copy.o start.o
+	$(LD) $(LDFLAGS) start.o copy.o -o copy.coff
+	../bin/coff2noff copy.coff copy
+
+seek.o: seek.c
+	$(CC) $(CFLAGS) -c seek.c
+seek: seek.o start.o
+	$(LD) $(LDFLAGS) start.o seek.o -o seek.coff
+	../bin/coff2noff seek.coff seek
+
