@@ -51,7 +51,7 @@
 
 // Max length of filename allow on system
 #define MAX_LENGTH 64
-
+extern void StartProcess_2(int id);
 // Copy memory from user memory to system memory
 // param virtAddr: Address in user memory
 // param limit: Max length of memory space
@@ -129,9 +129,49 @@ HandleSyscallExit()
 void
 HandleSyscallExec()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Exec: Not impelemted");
-	printf("\nUnexpected exception Syscall Exec: Not impelemted");
-	interrupt->Halt();
+	// Get file name
+	int filenameAddr = machine->ReadRegister(4);
+	char* filename = User2System(filenameAddr, MAX_LENGTH);
+
+	if (filename == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for file name");
+		printf("\nUnexpected error: System could not allocate memory for file name");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+	
+	OpenFile *executable = fileSystem->Open(filename);
+	
+	Thread *mythread;
+	int pid;
+	mythread = new Thread(filename);
+	if(mythread == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: System could not create thread");
+		printf("\nUnexpected error: System could not create thread");
+		machine->WriteRegister(2,-1);
+		return;
+	}
+	
+	pid = pageTable->Find();
+	if(pid < 0)
+	{
+		DEBUG('a', "\nUnexpected error: System could not find empty slot");
+		printf("\nUnexpected error: System could not find empty slot");
+		machine->WriteRegister(2,-1);
+		return;
+	}
+	fileNameTable[pid] = filename;
+	parentIdTable[pid] = currentThread->processID;
+	
+	mythread->Fork(StartProcess_2, pid);
+	currentThread->Yield();
+	mythread->processID = pid;
+	
+	machine->WriteRegister(2, pid);
+	delete[] filename;
+	
 }
 
 

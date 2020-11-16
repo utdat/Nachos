@@ -44,6 +44,30 @@ StartProcess(char *filename)
 					// by doing the syscall "exit"
 }
 
+void StartProcess_2(int id)
+{
+	// get filename of this id process
+	char* fileName = fileNameTable[id];
+    AddrSpace *space;
+    space = new AddrSpace(fileName);
+
+	if(space == NULL)
+	{
+		printf("nUnexpected error: could not create AddSpace.");
+		return;
+	}
+
+    currentThread->space = space;
+
+    space->InitRegisters();	// set the initial register values	
+    space->RestoreState();	// load page table register	
+
+    machine->Run();	// jump to the user progam	
+    ASSERT(FALSE);	// machine->Run never returns;
+					// the address space exits
+					// by doing the syscall "exit"	
+}
+
 // Data structures needed for the console test.  Threads making
 // I/O requests wait on a Semaphore to delay until the I/O completes.
 

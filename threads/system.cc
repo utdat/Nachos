@@ -30,6 +30,11 @@ SynchDisk   *synchDisk;
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
 SynchConsole* gSynchConsole;    // console interaction
+Semaphore *addrLock;	// semaphore in synch.h
+BitMap *gPhysPageBitMap;	// manage frame
+BitMap *pageTable; // manage page
+int *parentIdTable; // manage id of parentProcess
+char** fileNameTable; // manage filename of process
 #endif
 
 #ifdef NETWORK

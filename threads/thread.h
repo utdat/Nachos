@@ -88,7 +88,12 @@ class Thread {
 					// is called
 
     // basic thread operations
-
+	void FreeSpace()		// Giai phong vung nho cho tien trinh
+	{ 
+		if (space != 0)
+		delete space;
+	}
+	
     void Fork(VoidFunctionPtr func, int arg); 	// Make thread run (*func)(arg)
     void Yield();  				// Relinquish the CPU if any 
 						// other thread is runnable
@@ -101,10 +106,11 @@ class Thread {
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
-
+	
   private:
     // some of the private data for this class is listed above
-    
+    int processID; // ID of process
+	int exitStatus;
     int* stack; 	 		// Bottom of the stack 
 					// NULL if this is the main thread
 					// (If NULL, don't deallocate stack)
