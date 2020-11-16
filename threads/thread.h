@@ -88,6 +88,8 @@ class Thread {
 					// is called
 
     // basic thread operations
+	int processID; // ID of process
+	int exitStatus;
 	void FreeSpace()		// Giai phong vung nho cho tien trinh
 	{ 
 		if (space != 0)
@@ -109,8 +111,6 @@ class Thread {
 	
   private:
     // some of the private data for this class is listed above
-    int processID; // ID of process
-	int exitStatus;
     int* stack; 	 		// Bottom of the stack 
 					// NULL if this is the main thread
 					// (If NULL, don't deallocate stack)

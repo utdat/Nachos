@@ -15,7 +15,8 @@
 #include "interrupt.h"
 #include "stats.h"
 #include "timer.h"
-
+#include "bitmap.h"
+#include "synch.h"
 
 // Initialization and cleanup routines
 extern void Initialize(int argc, char **argv); 	// Initialization,
@@ -35,6 +36,7 @@ extern Timer *timer;				// the hardware alarm clock
 #include "machine.h"
 extern Machine* machine;	// user program memory and registers
 #include "synchcons.h"
+#include "synch.h"
 extern SynchConsole* gSynchConsole;	// console interaction
 
 extern Semaphore *addrLock;	// semaphore in synch.h
