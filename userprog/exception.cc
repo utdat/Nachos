@@ -193,9 +193,24 @@ HandleSyscallExec()
 void
 HandleSyscallJoin()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Join: Not impelemted");
-	printf("\nUnexpected exception Syscall Join: Not impelemted");
-	interrupt->Halt();
+	int id = machine->ReadRegister(4);
+	//check id of process
+	if(id < 0)
+	{
+		DEBUG('a', "\nUnexpected error: ID doesnt exist");
+		printf("\nUnexpected error: ID doesnt exist");
+		return;
+	}
+	// Check if process running is parent process of process which joins
+	if(currentThread->processID != parentIdTable[id])
+	{
+		DEBUG('a', "\nUnexpected error: Can't wait in process that is not its parent process.\n");
+		printf("\nUnexpected error: Can't wait in process that is not its parent process.\n");
+		return;
+	}
+	
+	addrLock->P(); // change process into block statement, wait childProcess
+	return;
 }
 
 
