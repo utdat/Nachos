@@ -20,20 +20,19 @@
 //	memory, and jump to it.
 //----------------------------------------------------------------------
 
-void
-StartProcess(char *filename)
+void StartProcess(char *filename)
 {
-    OpenFile *executable = fileSystem->Open(filename);
+    //OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
 
-    if (executable == NULL) {
+    /*if (executable == NULL) {
 	printf("Unable to open file %s\n", filename);
 	return;
-    }
-    space = new AddrSpace(executable);    
+    }*/
+    space = new AddrSpace(filename);    
     currentThread->space = space;
 
-    delete executable;			// close file
+    //delete executable;			// close file
 
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register

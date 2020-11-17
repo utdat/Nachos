@@ -24,6 +24,10 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
+#include "thread.h"
+#include "synch.h"
+#include "addrspace.h"
+#include "utility.h"
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -140,12 +144,16 @@ HandleSyscallExec()
 		machine->WriteRegister(2, -1);
 		return;
 	}
-	
+	//open file
 	OpenFile *executable = fileSystem->Open(filename);
+	delete executable;
 	
+	//Create new thread
 	Thread *mythread;
 	int pid;
 	mythread = new Thread(filename);
+	
+	//check new thread
 	if(mythread == NULL)
 	{
 		DEBUG('a', "\nUnexpected error: System could not create thread");
@@ -154,6 +162,7 @@ HandleSyscallExec()
 		return;
 	}
 	
+	//find empty pageTable
 	pid = pageTable->Find();
 	if(pid < 0)
 	{
@@ -162,13 +171,17 @@ HandleSyscallExec()
 		machine->WriteRegister(2,-1);
 		return;
 	}
+	
+	//save filename into fileNameTable
 	fileNameTable[pid] = filename;
 	parentIdTable[pid] = currentThread->processID;
 	
+	//run thread by Fork, CPU will be runned by currentThread
 	mythread->Fork(StartProcess_2, pid);
 	currentThread->Yield();
 	mythread->processID = pid;
 	
+	//return success
 	machine->WriteRegister(2, pid);
 	delete[] filename;
 	

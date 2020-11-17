@@ -156,6 +156,11 @@ Initialize(int argc, char **argv)
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
     gSynchConsole = new SynchConsole();  // Init console
+	addrLock = new Semaphore("addrLock", 1);
+    gPhysPageBitMap = new BitMap(256);
+	pageTable = new BitMap(100); 
+	parentIdTable = new int(100); 
+	fileNameTable = new char*[100];
 #endif
 
 #ifdef FILESYS
