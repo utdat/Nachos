@@ -38,6 +38,7 @@ Thread::Thread(char* threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+	_pid = 0;
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
@@ -316,5 +317,24 @@ Thread::RestoreUserState()
 {
     for (int i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister(i, userRegisters[i]);
+}
+
+//----------------------------------------------------------------------
+// Thread::getId
+// Get value of pid
+//----------------------------------------------------------------------
+int 
+Thread::getId()
+{
+	return _pid;
+}
+
+//----------------------------------------------------------------------
+// Thread::setId
+// Set value of pid
+//----------------------------------------------------------------------
+void Thread::setId(int value)
+{
+	_pid = value;
 }
 #endif

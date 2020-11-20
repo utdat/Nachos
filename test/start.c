@@ -155,6 +155,14 @@ ReadS:
 	j $31
 	.end ReadS
 
+
+	.globl Await
+	.ent 	Await
+Await:
+	addiu $2,$0,SC_Await
+	syscall
+	j $31
+	.end Await
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main
