@@ -30,6 +30,11 @@ SynchDisk   *synchDisk;
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
 SynchConsole* gSynchConsole;    // console interaction
+Semaphore* gAddrLock; // Semaphore control address space
+BitMap* gPhysicPages; // Bitmap manage physic frames
+BitMap* gPages; // Manage pages
+int* gProcParentIds; // List of id of parent of process
+char** gThreadNames; // List of threads name
 #endif
 
 #ifdef NETWORK
@@ -151,6 +156,13 @@ Initialize(int argc, char **argv)
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
     gSynchConsole = new SynchConsole();  // Init console
+	gAddrLock = new Semaphore("addrLock", 1); // Init semaphore
+	gPhysicPages = new BitMap(PHYSIC_PAGES_NUM); // Bitmap manage physic frames
+	gPages = new BitMap(MAX_PROCESS_NUM); // Manage pages
+	gPages->Mark(0);
+	gProcParentIds = new int[MAX_PROCESS_NUM]; // List of id of parent of process
+	gThreadNames = new char*[MAX_PROCESS_NUM]; // List of threads name
+	
 #endif
 
 #ifdef FILESYS
@@ -181,6 +193,15 @@ Cleanup()
 #ifdef USER_PROGRAM
     delete machine;
     delete gSynchConsole;
+	delete gAddrLock;
+	delete gPhysicPages;
+	delete gPages;
+	delete[] gProcParentIds; 
+	for (int i = 0; i < MAX_PROCESS_NUM; ++i)
+	{
+		if (gThreadNames[i] != NULL) delete[] gThreadNames[i];
+	}
+	delete[] gThreadNames; 
 #endif
 
 #ifdef FILESYS_NEEDED

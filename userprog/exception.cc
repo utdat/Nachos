@@ -103,6 +103,43 @@ System2User(int virtAddr, int len, char* buffer)
 }
 
 
+// Load process with specified ID to memory and start it
+// This function is mainly used for thread fork
+// param pid: Id of process
+void 
+StartProcess(int pid)
+{
+	// Load file
+	char* executableName = gThreadNames[pid];
+	OpenFile* executable = fileSystem->Open(executableName);
+	if (executable == NULL)
+	{
+		DEBUG('a', "\nUnexpected Error: File system could not open executable file");
+		printf("\nUnexpected Error: File system could not open executable file");
+		return;
+	}
+
+	// Create addrspace for thread
+	AddrSpace* space = new AddrSpace(executable);
+	if (space == NULL)
+	{
+		DEBUG('a', "\nUnexpected Error: System can not allocate memory for AddrSpace");
+		printf("\nUnexpected Error: System can not allocate memory for AddrSpace");
+		return;
+	}
+
+	// This part is written based on StartProcess function in progtest.cc
+	currentThread->space = space;
+	space->InitRegisters();
+	space->RestoreState();
+
+	// Free pre-created OpenFile object
+	delete executable;
+
+	machine->Run();
+	ASSERT(FALSE);
+}
+
 // Handle syscall Halt
 // Print system information and halt the os
 void
@@ -125,13 +162,66 @@ HandleSyscallExit()
 
 
 // Handle syscall Exec
-// TODO: Describe this function
+// Execute a program, given path to program file
 void
 HandleSyscallExec()
 {
-	DEBUG('a', "\nUnexpected exception Syscall Exec: Not impelemted");
-	printf("\nUnexpected exception Syscall Exec: Not impelemted");
-	interrupt->Halt();
+	// Fetch param
+	int filenameAddr = machine->ReadRegister(4);
+	char* filename = User2System(filenameAddr, MAX_LENGTH);
+	if (filename == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for file name");
+		printf("\nUnexpected error: System could not allocate memory for file name");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	// Try to open file. Just a check. Close file immediately after open
+	OpenFile* file = fileSystem->Open(filename);
+	if (file == NULL)
+	{
+		DEBUG('a', "\nUnexpected Error: System could not open specified file");
+		printf("\nUnexpected Error: System could not open specified file");
+		machine->WriteRegister(2, -1);
+		delete filename;
+		return;
+	}
+	delete file;
+
+	// Assign a id for new thread
+	int pid = gPages->Find();
+	if (pid < 0)
+	{
+		DEBUG('a', "\nUnexpected error: No free page available for new thread");
+		printf("\nUnexpected error: No free page available for new thread");
+		delete filename;		
+	}
+
+	// Create thread
+	Thread* thread = new Thread(filename);
+	if (thread == NULL)
+	{
+		DEBUG('a', "\nUnexpected error: System could not allocate memory for new thread");
+		printf("\nUnexpected error: System could not allocate memory for new thread");
+		gPages->Clear(pid);
+		delete filename;
+		return;
+	}
+	thread->setId(pid);
+
+	// Save thread info
+	gThreadNames[pid] = filename;
+	gProcParentIds[pid] = currentThread->getId();
+	
+	// Fork thread
+	thread->Fork(StartProcess, pid);
+	
+	// Context switch
+	currentThread->Yield();
+
+	// Return
+	machine->WriteRegister(2, pid);
 }
 
 
@@ -552,6 +642,36 @@ HandleSyscallReadS()
 }
 
 
+// Handle syscall await
+// Await a thread to finish
+void
+HandleSyscallAwait()
+{
+	// Fetch param
+	// Process id. Need to wait for this process to finish
+	int pid = machine->ReadRegister(4);
+
+	// Check for valid id
+	if (pid < 0 || pid >= MAX_PROCESS_NUM || !gPages->Test(pid))
+	{
+		DEBUG('a', "\nIllegal action: Can not await thread with invalid id");
+		printf("\nIllegal action: Can not await thread with invalid id");
+		return;
+	}
+	
+	// Check if process is not child of current thread
+	if (currentThread->getId() != gProcParentIds[pid])
+	{
+		DEBUG('a', "\nIllegal action: Can not await thread which was not forked from current thread");
+		printf("\nIllegal action: Can not await thread which was not forked from current thread");
+		return;
+	}
+
+	// Semaphore. Wait for thread to finish
+	gAddrLock->P();
+}
+
+
 // Handle exception from machine
 // For SyscallException, each kind of syscall will be handled 
 // separately in another function (for readability and maintainability)
@@ -610,7 +730,7 @@ ExceptionHandler(ExceptionType which)
 				case SC_Exit: // Program exit
 					HandleSyscallExit();
 					break;
-				case SC_Exec: // TODO: Describe syscall here
+				case SC_Exec: // Execute a program, given path to program file
 					HandleSyscallExec();
 					break;
 				case SC_Join: // TODO: Describe syscall here		
@@ -647,6 +767,11 @@ ExceptionHandler(ExceptionType which)
 				case SC_ReadS: // Read a string from console
 					HandleSyscallReadS();
 					break;
+
+				case SC_Await: // Await a thread to finish
+					HandleSyscallAwait();
+					break;
+
 				default:
 					break;
     		}

@@ -35,6 +35,8 @@
 #define SC_PrintS	12
 #define SC_ReadS	13
 
+#define SC_Await	14
+
 #ifndef IN_ASM
 
 /* The system call interface.  These are the operations the Nachos
@@ -63,7 +65,14 @@ typedef int SpaceId;
  * address space identifier
  */
 SpaceId Exec(char *name);
- 
+
+
+/* Await a thread to finish
+ * Pause current thread and only return when thread with given pid finished
+*/
+void Await(SpaceId pid);
+
+
 /* Only return once the the user program "id" has finished.  
  * Return the exit status.
  */
